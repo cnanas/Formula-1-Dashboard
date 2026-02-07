@@ -22,6 +22,7 @@ import { CircuitInfoWidget } from "./widgets/circuit-info-widget";
 import { TeamPerformanceWidget } from "./widgets/team-performance-widget";
 import { SessionScheduleWidget } from "./widgets/session-schedule-widget";
 import { DriverH2HWidget } from "./widgets/driver-h2h-widget";
+import { PointsPerRaceWidget } from "./widgets/points-per-race-widget";
 import { useDashboardEdit } from "@/providers/dashboard-edit-provider";
 
 import "react-grid-layout/css/styles.css";
@@ -92,6 +93,12 @@ const WIDGET_REGISTRY: Record<
     title: "Driver Comparison",
     subtitle: "Head-to-Head",
     component: DriverH2HWidget,
+    defaultSize: { w: 6, h: 6 },
+  },
+  "points-per-race": {
+    title: "Points per Race",
+    subtitle: "Season History",
+    component: PointsPerRaceWidget,
     defaultSize: { w: 6, h: 6 },
   },
 };

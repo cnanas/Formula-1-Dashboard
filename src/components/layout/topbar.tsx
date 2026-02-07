@@ -12,6 +12,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { MobileNav } from "./mobile-nav";
+import { ThemeSelector } from "./theme-selector";
 import { usePageTitle } from "@/providers/page-title-provider";
 import { useDashboardEdit } from "@/providers/dashboard-edit-provider";
 
@@ -109,7 +110,8 @@ export function Topbar() {
       </div>
 
       <div className="flex items-center gap-2">
-        {/* Empty for now - theme toggle moved to sidebar */}
+        {/* Theme selector for dynamic backgrounds */}
+        <ThemeSelector />
       </div>
     </header>
   );

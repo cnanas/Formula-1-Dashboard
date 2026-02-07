@@ -6,9 +6,20 @@ import { useOpenF1 } from "@/hooks/use-openf1";
 import { getTeamColor } from "@/lib/utils/colors";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const CURRENT_YEAR = new Date().getFullYear();
-const PREVIOUS_YEAR = CURRENT_YEAR - 1;
+const MIN_YEAR = Math.max(2018, CURRENT_YEAR - 7);
+const SEASON_YEARS = Array.from(
+  { length: CURRENT_YEAR - MIN_YEAR + 1 },
+  (_, i) => CURRENT_YEAR - i
+);
 
 // Position badge colors
 function getPositionBadgeStyle(position: number) {
@@ -30,11 +41,12 @@ export function ConstructorStandingsWidget() {
   // Get sessions for the selected year
   const { data: sessions, isLoading: sessionsLoading } = useOpenF1("sessions", {
     year: selectedYear,
+    session_type: "Race",
   });
 
   // Find the most recent completed race session
   const latestSession = sessions
-    .filter((s) => s.session_type === "Race" && new Date(s.date_start) < new Date())
+    .filter((s) => new Date(s.date_start) < new Date())
     .sort((a, b) => new Date(b.date_start).getTime() - new Date(a.date_start).getTime())[0];
 
   const sessionKey = latestSession?.session_key?.toString();
@@ -62,30 +74,22 @@ export function ConstructorStandingsWidget() {
 
   return (
     <div className="space-y-3">
-      {/* Season toggle tabs */}
-      <div className="flex gap-1 p-1 bg-muted/50 rounded-lg w-fit">
-        <button
-          className={cn(
-            "px-3 py-1 text-xs font-medium rounded-md transition-colors",
-            selectedYear === CURRENT_YEAR
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          )}
-          onClick={() => setSelectedYear(CURRENT_YEAR)}
+      <div className="w-28">
+        <Select
+          value={selectedYear.toString()}
+          onValueChange={(value) => setSelectedYear(Number(value))}
         >
-          {CURRENT_YEAR}
-        </button>
-        <button
-          className={cn(
-            "px-3 py-1 text-xs font-medium rounded-md transition-colors",
-            selectedYear === PREVIOUS_YEAR
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          )}
-          onClick={() => setSelectedYear(PREVIOUS_YEAR)}
-        >
-          {PREVIOUS_YEAR}
-        </button>
+          <SelectTrigger className="h-8 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {SEASON_YEARS.map((year) => (
+              <SelectItem key={year} value={year.toString()}>
+                {year}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {isLoading ? (

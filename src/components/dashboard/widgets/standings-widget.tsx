@@ -2,13 +2,26 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { useOpenF1 } from "@/hooks/use-openf1";
 import { DriverAvatar } from "@/components/shared/driver-avatar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { AnimatedCounter } from "@/components/ui/animated-counter";
 import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const CURRENT_YEAR = new Date().getFullYear();
-const PREVIOUS_YEAR = CURRENT_YEAR - 1;
+const MIN_YEAR = Math.max(2018, CURRENT_YEAR - 7);
+const SEASON_YEARS = Array.from(
+  { length: CURRENT_YEAR - MIN_YEAR + 1 },
+  (_, i) => CURRENT_YEAR - i
+);
 
 // Position badge colors
 function getPositionBadgeStyle(position: number) {
@@ -39,11 +52,12 @@ export function StandingsWidget({ onYearChange }: StandingsWidgetProps) {
   // Get sessions for the selected year
   const { data: sessions, isLoading: sessionsLoading } = useOpenF1("sessions", {
     year: selectedYear,
+    session_type: "Race",
   });
 
   // Find the most recent completed race session
   const latestSession = sessions
-    .filter((s) => s.session_type === "Race" && new Date(s.date_start) < new Date())
+    .filter((s) => new Date(s.date_start) < new Date())
     .sort((a, b) => new Date(b.date_start).getTime() - new Date(a.date_start).getTime())[0];
 
   const sessionKey = latestSession?.session_key?.toString();
@@ -70,35 +84,24 @@ export function StandingsWidget({ onYearChange }: StandingsWidgetProps) {
     .sort((a, b) => a.position_current - b.position_current)
     .slice(0, 10);
 
-  // Calculate max points for relative bar width
-  const maxPoints = top[0]?.points_current ?? 1;
-
   return (
     <div className="space-y-3">
-      {/* Season toggle tabs */}
-      <div className="flex gap-1 p-1 bg-muted/50 rounded-lg w-fit">
-        <button
-          className={cn(
-            "px-3 py-1 text-xs font-medium rounded-md transition-colors",
-            selectedYear === CURRENT_YEAR
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          )}
-          onClick={() => handleYearChange(CURRENT_YEAR)}
+      <div className="w-28">
+        <Select
+          value={selectedYear.toString()}
+          onValueChange={(value) => handleYearChange(Number(value))}
         >
-          {CURRENT_YEAR}
-        </button>
-        <button
-          className={cn(
-            "px-3 py-1 text-xs font-medium rounded-md transition-colors",
-            selectedYear === PREVIOUS_YEAR
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          )}
-          onClick={() => handleYearChange(PREVIOUS_YEAR)}
-        >
-          {PREVIOUS_YEAR}
-        </button>
+          <SelectTrigger className="h-8 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {SEASON_YEARS.map((year) => (
+              <SelectItem key={year} value={year.toString()}>
+                {year}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {isLoading ? (
@@ -123,24 +126,29 @@ export function StandingsWidget({ onYearChange }: StandingsWidgetProps) {
         </div>
       ) : (
         <div className="space-y-1">
-          {top.map((s) => {
+          {top.map((s, index) => {
             const driver = driverMap.get(s.driver_number);
-            const pointsWidth = (s.points_current / maxPoints) * 100;
             
             return (
-              <div
+              <motion.div
                 key={s.driver_number}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.3, delay: index * 0.05 }}
                 className="flex items-center gap-3 py-2 px-2 rounded-xl hover:bg-muted/50 transition-colors group"
               >
                 {/* Position badge */}
-                <div
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ duration: 0.3, delay: index * 0.05 + 0.1 }}
                   className={cn(
                     "flex items-center justify-center h-7 w-7 rounded-full text-xs font-bold",
                     getPositionBadgeStyle(s.position_current)
                   )}
                 >
                   {s.position_current}
-                </div>
+                </motion.div>
 
                 {/* Driver avatar */}
                 <DriverAvatar
@@ -160,14 +168,17 @@ export function StandingsWidget({ onYearChange }: StandingsWidgetProps) {
                   </p>
                 </div>
 
-                {/* Points */}
+                {/* Points - Animated */}
                 <div className="text-right">
-                  <span className="text-sm font-bold tabular-nums">
-                    {s.points_current}
-                  </span>
-                  <span className="text-xs text-muted-foreground ml-1">pts</span>
+                  <AnimatedCounter
+                    value={s.points_current}
+                    duration={1}
+                    delay={index * 0.05}
+                    className="text-sm font-bold"
+                    suffix=" pts"
+                  />
                 </div>
-              </div>
+              </motion.div>
             );
           })}
         </div>
