@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Users, Trophy, TrendingUp, ChevronRight } from "lucide-react";
 import { useOpenF1 } from "@/hooks/use-openf1";
-import { useSeason } from "@/providers/season-provider";
+import { useSeason, getDefaultWidgetSeason } from "@/providers/season-provider";
 import { DriverAvatar } from "@/components/shared/driver-avatar";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -21,9 +21,21 @@ import { getTeamColor } from "@/lib/utils/colors";
 const STORAGE_KEY = "f1-dashboard-favorite-team";
 
 export function TeamProfileWidget() {
-  const { season } = useSeason();
+  const { season: globalSeason, availableSeasons } = useSeason();
+  const [widgetSeason, setWidgetSeason] = useState(() => getDefaultWidgetSeason(globalSeason));
   const [selectedTeam, setSelectedTeam] = useState<string>("");
   const [mounted, setMounted] = useState(false);
+  const prevGlobalSeasonRef = useRef<number | null>(null);
+
+  const season = widgetSeason;
+
+  // Sync widget season when user changes the topbar season filter (not on mount)
+  useEffect(() => {
+    if (prevGlobalSeasonRef.current !== null && prevGlobalSeasonRef.current !== globalSeason) {
+      setWidgetSeason(globalSeason);
+    }
+    prevGlobalSeasonRef.current = globalSeason;
+  }, [globalSeason]);
 
   // Get sessions for the season to find the latest one
   const { data: sessions, isLoading: sessionsLoading } = useOpenF1("sessions", {
@@ -141,23 +153,42 @@ export function TeamProfileWidget() {
 
   return (
     <div className="space-y-4">
-      {/* Team Selector */}
-      <Select value={selectedTeam} onValueChange={handleTeamChange}>
-        <SelectTrigger className="w-full">
-          <Users className="h-4 w-4 mr-2 text-muted-foreground" />
-          <SelectValue placeholder="Select a team" />
-        </SelectTrigger>
-        <SelectContent>
-          {teams.map((team) => {
-            const standing = constructorStandings.find((s) => s.team_name === team);
-            return (
-              <SelectItem key={team} value={team}>
-                {standing ? `P${standing.position_current} - ` : ""}{team}
+      {/* Season + Team row */}
+      <div className="flex flex-wrap items-center gap-2">
+        <Select
+          value={widgetSeason.toString()}
+          onValueChange={(v) => setWidgetSeason(Number(v))}
+        >
+          <SelectTrigger className="w-24 h-9 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {availableSeasons.map((y) => (
+              <SelectItem key={y} value={y.toString()}>
+                {y}
               </SelectItem>
-            );
-          })}
-        </SelectContent>
-      </Select>
+            ))}
+          </SelectContent>
+        </Select>
+        <div className="flex-1 min-w-0">
+          <Select value={selectedTeam} onValueChange={handleTeamChange}>
+            <SelectTrigger className="w-full h-9">
+              <Users className="h-4 w-4 mr-2 text-muted-foreground shrink-0" />
+              <SelectValue placeholder="Select a team" />
+            </SelectTrigger>
+            <SelectContent>
+              {teams.map((team) => {
+                const standing = constructorStandings.find((s) => s.team_name === team);
+                return (
+                  <SelectItem key={team} value={team}>
+                    {standing ? `P${standing.position_current} - ` : ""}{team}
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
 
       {selectedTeam && (
         <>

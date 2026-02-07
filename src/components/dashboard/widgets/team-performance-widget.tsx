@@ -1,10 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useOpenF1 } from "@/hooks/use-openf1";
-import { useSeason } from "@/providers/season-provider";
-import { getTeamColor } from "@/lib/utils/colors";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useSeason, getDefaultWidgetSeason } from "@/providers/season-provider";
 import {
   Select,
   SelectContent,
@@ -12,6 +10,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { getTeamColor } from "@/lib/utils/colors";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 interface PerformanceData {
@@ -62,8 +62,20 @@ function PerformanceBubble({
 }
 
 export function TeamPerformanceWidget() {
-  const { season } = useSeason();
+  const { season: globalSeason, availableSeasons } = useSeason();
+  const [widgetSeason, setWidgetSeason] = useState(() => getDefaultWidgetSeason(globalSeason));
   const [selectedTeam, setSelectedTeam] = useState<string>("");
+  const prevGlobalSeasonRef = useRef<number | null>(null);
+
+  const season = widgetSeason;
+
+  // Sync widget season when user changes the topbar season filter (not on mount)
+  useEffect(() => {
+    if (prevGlobalSeasonRef.current !== null && prevGlobalSeasonRef.current !== globalSeason) {
+      setWidgetSeason(globalSeason);
+    }
+    prevGlobalSeasonRef.current = globalSeason;
+  }, [globalSeason]);
 
   // Get sessions for selected season
   const { data: sessions, isLoading: sessionsLoading } = useOpenF1("sessions", {
@@ -155,19 +167,36 @@ export function TeamPerformanceWidget() {
 
   return (
     <div className="space-y-4">
-      {/* Team selector */}
-      <Select value={currentTeam} onValueChange={setSelectedTeam}>
-        <SelectTrigger className="w-48">
-          <SelectValue placeholder="Select team" />
-        </SelectTrigger>
-        <SelectContent>
-          {teams.map((team) => (
-            <SelectItem key={team} value={team}>
-              {team}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      {/* Season + Team row */}
+      <div className="flex flex-wrap items-center gap-2">
+        <Select
+          value={widgetSeason.toString()}
+          onValueChange={(v) => setWidgetSeason(Number(v))}
+        >
+          <SelectTrigger className="w-24 h-9 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {availableSeasons.map((y) => (
+              <SelectItem key={y} value={y.toString()}>
+                {y}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={currentTeam} onValueChange={setSelectedTeam}>
+          <SelectTrigger className="h-9 min-w-[140px] flex-1">
+            <SelectValue placeholder="Select team" />
+          </SelectTrigger>
+          <SelectContent>
+            {teams.map((team) => (
+              <SelectItem key={team} value={team}>
+                {team}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       {/* Performance bubbles */}
       <div className="flex flex-wrap justify-center items-end gap-4 py-4">

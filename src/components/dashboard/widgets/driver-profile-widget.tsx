@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { User, Trophy, TrendingUp, ChevronRight } from "lucide-react";
 import { useOpenF1 } from "@/hooks/use-openf1";
-import { useSeason } from "@/providers/season-provider";
+import { useSeason, getDefaultWidgetSeason } from "@/providers/season-provider";
 import { DriverAvatar } from "@/components/shared/driver-avatar";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -21,9 +21,21 @@ import { getTeamColor } from "@/lib/utils/colors";
 const STORAGE_KEY = "f1-dashboard-favorite-driver";
 
 export function DriverProfileWidget() {
-  const { season } = useSeason();
+  const { season: globalSeason, availableSeasons } = useSeason();
+  const [widgetSeason, setWidgetSeason] = useState(() => getDefaultWidgetSeason(globalSeason));
   const [selectedDriver, setSelectedDriver] = useState<string>("");
   const [mounted, setMounted] = useState(false);
+  const prevGlobalSeasonRef = useRef<number | null>(null);
+
+  const season = widgetSeason;
+
+  // Sync widget season when user changes the topbar season filter (not on mount)
+  useEffect(() => {
+    if (prevGlobalSeasonRef.current !== null && prevGlobalSeasonRef.current !== globalSeason) {
+      setWidgetSeason(globalSeason);
+    }
+    prevGlobalSeasonRef.current = globalSeason;
+  }, [globalSeason]);
 
   // Get sessions for the season to find the latest one
   const { data: sessions, isLoading: sessionsLoading } = useOpenF1("sessions", {
@@ -136,26 +148,45 @@ export function DriverProfileWidget() {
 
   return (
     <div className="space-y-4">
-      {/* Driver Selector */}
-      <Select value={selectedDriver} onValueChange={handleDriverChange}>
-        <SelectTrigger className="w-full">
-          <User className="h-4 w-4 mr-2 text-muted-foreground" />
-          <SelectValue placeholder="Select a driver" />
-        </SelectTrigger>
-        <SelectContent>
-          {drivers
-            .sort((a, b) => {
-              const aStanding = standings.find((s) => s.driver_number === a.driver_number);
-              const bStanding = standings.find((s) => s.driver_number === b.driver_number);
-              return (aStanding?.position_current ?? 99) - (bStanding?.position_current ?? 99);
-            })
-            .map((d) => (
-              <SelectItem key={d.driver_number} value={d.driver_number.toString()}>
-                {d.full_name} - {d.team_name}
+      {/* Season + Driver row */}
+      <div className="flex flex-wrap items-center gap-2">
+        <Select
+          value={widgetSeason.toString()}
+          onValueChange={(v) => setWidgetSeason(Number(v))}
+        >
+          <SelectTrigger className="w-24 h-9 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {availableSeasons.map((y) => (
+              <SelectItem key={y} value={y.toString()}>
+                {y}
               </SelectItem>
             ))}
-        </SelectContent>
-      </Select>
+          </SelectContent>
+        </Select>
+        <div className="flex-1 min-w-0">
+          <Select value={selectedDriver} onValueChange={handleDriverChange}>
+            <SelectTrigger className="w-full h-9">
+              <User className="h-4 w-4 mr-2 text-muted-foreground shrink-0" />
+              <SelectValue placeholder="Select a driver" />
+            </SelectTrigger>
+            <SelectContent>
+              {drivers
+                .sort((a, b) => {
+                  const aStanding = standings.find((s) => s.driver_number === a.driver_number);
+                  const bStanding = standings.find((s) => s.driver_number === b.driver_number);
+                  return (aStanding?.position_current ?? 99) - (bStanding?.position_current ?? 99);
+                })
+                .map((d) => (
+                  <SelectItem key={d.driver_number} value={d.driver_number.toString()}>
+                    {d.full_name} - {d.team_name}
+                  </SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
 
       {driver && (
         <>

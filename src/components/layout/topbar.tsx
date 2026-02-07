@@ -67,124 +67,147 @@ export function Topbar() {
   const pageTitle = dynamicTitle ?? getStaticPageTitle(pathname);
 
   return (
-    <header
-      className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur-sm"
-    >
-      <div className="flex items-center gap-3">
-        {/* Mobile menu trigger - only render Radix Sheet after mount to avoid hydration mismatch (aria-controls ID) */}
-        {mounted ? (
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden h-8 w-8">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-64 p-0">
-              <SheetTitle className="sr-only">Navigation</SheetTitle>
-              <MobileNav />
-            </SheetContent>
-          </Sheet>
-        ) : (
-          <Button variant="ghost" size="icon" className="md:hidden h-8 w-8" type="button" aria-hidden>
-            <Menu className="h-5 w-5" />
-          </Button>
-        )}
+    <header className="sticky top-0 z-30 overflow-hidden">
+      {/* Thin accent stripe at top */}
+      <div
+        className="h-0.5 w-full shrink-0"
+        style={{
+          background:
+            "linear-gradient(90deg, var(--primary) 0%, color-mix(in oklch, var(--primary) 70%, transparent) 100%)",
+        }}
+      />
+      <div className="flex h-16 items-center justify-between border-b border-border/60 bg-background/90 px-4 shadow-sm backdrop-blur-md sm:px-6">
+        <div className="flex min-w-0 items-center gap-4">
+          {/* Mobile menu trigger - only render Radix Sheet after mount to avoid hydration mismatch (aria-controls ID) */}
+          {mounted ? (
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="md:hidden h-9 w-9 shrink-0 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+                >
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-64 p-0">
+                <SheetTitle className="sr-only">Navigation</SheetTitle>
+                <MobileNav />
+              </SheetContent>
+            </Sheet>
+          ) : (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden h-9 w-9 shrink-0 rounded-lg"
+              type="button"
+              aria-hidden
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+          )}
 
-        <div className="flex flex-col">
-          <h1 className="text-lg font-semibold leading-tight">{pageTitle}</h1>
-          {subtitle && (
-            <span className="text-xs text-muted-foreground">{subtitle}</span>
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <h1 className="truncate text-xl font-semibold tracking-tight text-foreground">
+              {pageTitle}
+            </h1>
+            {subtitle && (
+              <span className="truncate text-xs text-muted-foreground">
+                {subtitle}
+              </span>
+            )}
+          </div>
+
+          {/* Live session indicator */}
+          {isLive && latestSession && (
+            <Badge
+              variant="destructive"
+              className="ml-1 flex shrink-0 items-center gap-1.5 animate-pulse rounded-full px-2.5 py-0.5 text-xs font-medium shadow-sm"
+            >
+              <Radio className="h-3 w-3" />
+              LIVE: {latestSession.session_name}
+            </Badge>
           )}
         </div>
 
-        {/* Live session indicator */}
-        {isLive && latestSession && (
-          <Badge
-            variant="destructive"
-            className="flex items-center gap-1.5 animate-pulse"
-          >
-            <Radio className="h-3 w-3" />
-            <span className="text-xs font-medium">
-              LIVE: {latestSession.session_name}
-            </span>
-          </Badge>
-        )}
-      </div>
-
-      <div className="flex items-center gap-1.5">
-        {/* Season: 2026 and 2025 as buttons, older years in dropdown */}
-        {mounted ? (
-          <>
-            {recentSeasons.map((y) => (
-              <Button
-                key={y}
-                variant={season === y ? "default" : "outline"}
-                size="sm"
-                className="h-8 px-3 text-sm font-medium"
-                onClick={() => setSeason(y)}
-              >
-                {y}
-              </Button>
-            ))}
-            {olderSeasons.length > 0 && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant={recentSeasons.includes(season) ? "outline" : "default"}
-                    size="sm"
-                    className="h-8 gap-1.5 text-sm font-medium border-border/50"
-                  >
-                    <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                    {recentSeasons.includes(season)
-                      ? "Older"
-                      : `Season ${season}`}
-                    <ChevronDown className="h-3.5 w-3.5 opacity-70" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {olderSeasons.map((y) => (
-                    <DropdownMenuItem
-                      key={y}
-                      onClick={() => setSeason(y)}
+        <div className="flex shrink-0 items-center gap-2">
+          {/* Season selector: pill group */}
+          {mounted ? (
+            <div className="flex items-center rounded-lg border border-border/50 bg-muted/30 p-0.5">
+              {recentSeasons.map((y) => (
+                <Button
+                  key={y}
+                  variant={season === y ? "secondary" : "ghost"}
+                  size="sm"
+                  className="h-8 min-w-[2.75rem] rounded-md px-3 text-sm font-medium transition-colors"
+                  onClick={() => setSeason(y)}
+                >
+                  {y}
+                </Button>
+              ))}
+              {olderSeasons.length > 0 && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant={recentSeasons.includes(season) ? "ghost" : "secondary"}
+                      size="sm"
+                      className="h-8 gap-1.5 rounded-md border-0 px-2.5 text-sm font-medium"
                     >
-                      Season {y}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+                      <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                      {recentSeasons.includes(season)
+                        ? "Older"
+                        : season}
+                      <ChevronDown className="h-3.5 w-3.5 opacity-70" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="min-w-[8rem]">
+                    {olderSeasons.map((y) => (
+                      <DropdownMenuItem
+                        key={y}
+                        onClick={() => setSeason(y)}
+                      >
+                        Season {y}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
+          ) : (
+            <div className="flex h-8 items-center gap-1.5 rounded-lg border border-border/50 bg-muted/30 px-3 text-sm font-medium text-muted-foreground">
+              <Calendar className="h-3.5 w-3.5" />
+              {season}
+            </div>
+          )}
+
+          {/* Divider before actions */}
+          <div className="h-6 w-px bg-border/60" aria-hidden />
+
+          {/* Edit + Theme */}
+          <div className="flex items-center gap-1">
+            {showEditButton && (
+              <Button
+                variant={isEditing ? "default" : "outline"}
+                size="sm"
+                className="h-8 gap-1.5 rounded-lg border-border/60 font-medium shadow-sm"
+                onClick={toggleEditing}
+              >
+                {isEditing ? (
+                  <>
+                    <Check className="h-4 w-4" />
+                    Done
+                  </>
+                ) : (
+                  <>
+                    <Pencil className="h-4 w-4" />
+                    Edit
+                  </>
+                )}
+              </Button>
             )}
-          </>
-        ) : (
-          <div className="h-8 px-3 flex items-center gap-1.5 text-sm font-medium border border-border/50 rounded-md bg-background">
-            <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-muted-foreground">{season}</span>
+            <ThemeSelector />
           </div>
-        )}
-
-        {/* Edit Dashboard button - only shown on dashboard page */}
-        {showEditButton && (
-          <Button
-            variant={isEditing ? "default" : "outline"}
-            size="sm"
-            className="h-8"
-            onClick={toggleEditing}
-          >
-            {isEditing ? (
-              <>
-                <Check className="h-4 w-4 mr-1.5" />
-                Done
-              </>
-            ) : (
-              <>
-                <Pencil className="h-4 w-4 mr-1.5" />
-                Edit
-              </>
-            )}
-          </Button>
-        )}
-
-        {/* Theme selector for dynamic backgrounds */}
-        <ThemeSelector />
+        </div>
       </div>
     </header>
   );

@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Calendar } from "lucide-react";
 import { useOpenF1 } from "@/hooks/use-openf1";
-import { useSeason } from "@/providers/season-provider";
+import { useSeason, getDefaultWidgetSeason } from "@/providers/season-provider";
 import { getTeamColor } from "@/lib/utils/colors";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -30,51 +30,20 @@ function getPositionBadgeStyle(position: number) {
   }
 }
 
-// Available years for the widget
-// Use fixed max year to avoid hydration issues
-const MIN_YEAR = 2023;
-const MAX_YEAR = 2026;
-const AVAILABLE_YEARS = Array.from(
-  { length: MAX_YEAR - MIN_YEAR + 1 },
-  (_, i) => MAX_YEAR - i
-);
-
-const STORAGE_KEY = "f1-dashboard-constructor-standings-year";
-
 export function ConstructorStandingsWidget() {
-  const { season: globalSeason } = useSeason();
-  const [localYear, setLocalYear] = useState<number | null>(null);
-  const [mounted, setMounted] = useState(false);
+  const { season: globalSeason, availableSeasons } = useSeason();
+  const [widgetSeason, setWidgetSeason] = useState(() => getDefaultWidgetSeason(globalSeason));
+  const prevGlobalSeasonRef = useRef<number | null>(null);
 
-  // Load saved year from localStorage on mount
+  const season = widgetSeason;
+
+  // Sync widget season when user changes the topbar season filter (not on mount)
   useEffect(() => {
-    setMounted(true);
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved && saved !== "global") {
-        const year = Number(saved);
-        if (!isNaN(year) && year >= MIN_YEAR && year <= MAX_YEAR) {
-          setLocalYear(year);
-        }
-      }
-    } catch {
-      // Ignore localStorage errors
+    if (prevGlobalSeasonRef.current !== null && prevGlobalSeasonRef.current !== globalSeason) {
+      setWidgetSeason(globalSeason);
     }
-  }, []);
-
-  // Save year selection to localStorage
-  const handleYearChange = (value: string) => {
-    const newYear = value === "global" ? null : Number(value);
-    setLocalYear(newYear);
-    try {
-      localStorage.setItem(STORAGE_KEY, value);
-    } catch {
-      // Ignore localStorage errors
-    }
-  };
-  
-  // Use local year if set, otherwise use global season
-  const season = localYear ?? globalSeason;
+    prevGlobalSeasonRef.current = globalSeason;
+  }, [globalSeason]);
 
   // Get sessions for the selected season
   const { data: sessions, isLoading: sessionsLoading } = useOpenF1("sessions", {
@@ -115,18 +84,15 @@ export function ConstructorStandingsWidget() {
       {/* Year selector */}
       <div className="flex items-center justify-between">
         <Select
-          value={mounted ? (localYear?.toString() ?? "global") : "global"}
-          onValueChange={handleYearChange}
+          value={widgetSeason.toString()}
+          onValueChange={(v) => setWidgetSeason(Number(v))}
         >
           <SelectTrigger className="h-7 w-auto gap-1.5 text-xs font-medium border-border/50">
             <Calendar className="h-3 w-3 text-muted-foreground" />
             <SelectValue />
           </SelectTrigger>
           <SelectContent align="start">
-            <SelectItem value="global">
-              Global ({globalSeason})
-            </SelectItem>
-            {AVAILABLE_YEARS.map((y) => (
+            {availableSeasons.map((y) => (
               <SelectItem key={y} value={y.toString()}>
                 {y}
               </SelectItem>

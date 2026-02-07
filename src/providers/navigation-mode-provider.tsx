@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 
-type NavigationMode = "sidebar" | "bottom";
+export type NavigationMode = "sidebar" | "bottom";
 
 interface NavigationModeContextType {
   mode: NavigationMode;
@@ -11,39 +11,58 @@ interface NavigationModeContextType {
   mounted: boolean;
 }
 
-// Default context value for SSR and initial render
 const defaultContextValue: NavigationModeContextType = {
-  mode: "bottom",
+  mode: "sidebar",
   setMode: () => {},
   toggleMode: () => {},
-  mounted: false,
+  mounted: true,
 };
 
 const NavigationModeContext = createContext<NavigationModeContextType>(defaultContextValue);
 
 const STORAGE_KEY = "f1dash_nav_mode";
+const COOKIE_NAME = "f1dash_nav_mode";
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // 1 year
 
-export function NavigationModeProvider({ children }: { children: React.ReactNode }) {
-  const [mode, setModeState] = useState<NavigationMode>("bottom");
-  const [mounted, setMounted] = useState(false);
+function setNavModeCookie(mode: NavigationMode) {
+  try {
+    document.cookie = `${COOKIE_NAME}=${mode}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
+  } catch {
+    // Ignore
+  }
+}
+
+export function NavigationModeProvider({
+  children,
+  initialMode,
+}: {
+  children: React.ReactNode;
+  /** From server cookie so first paint matches saved preference (avoids sidebar flash on refresh) */
+  initialMode?: NavigationMode | null;
+}) {
+  const [mode, setModeState] = useState<NavigationMode>(
+    initialMode === "bottom" || initialMode === "sidebar" ? initialMode : "sidebar"
+  );
+  const [mounted, setMounted] = useState(true);
 
   useEffect(() => {
-    // Load saved preference
+    if (initialMode != null) return;
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored === "bottom" || stored === "sidebar") {
         setModeState(stored);
+        setNavModeCookie(stored);
       }
     } catch {
       // Ignore storage errors
     }
-    setMounted(true);
-  }, []);
+  }, [initialMode]);
 
   const setMode = useCallback((newMode: NavigationMode) => {
     setModeState(newMode);
     try {
       localStorage.setItem(STORAGE_KEY, newMode);
+      setNavModeCookie(newMode);
     } catch {
       // Ignore storage errors
     }

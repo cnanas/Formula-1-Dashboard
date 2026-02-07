@@ -7,9 +7,20 @@ const MIN_SEASON = 2023;
 // Use a fixed max year to avoid hydration issues
 // This should be updated at the start of each new year
 const MAX_SEASON = 2026;
-// Default to the most recent completed season with full data
-// Update this when a new season has completed races
-const DEFAULT_SEASON = 2025;
+// Default to current/upcoming season
+const DEFAULT_SEASON = 2026;
+
+/** Revert on 2026-02-11: remove this and have widgets use globalSeason as initial state. */
+const WIDGET_DEFAULT_OVERRIDE_UNTIL = "2026-02-11";
+const WIDGET_DEFAULT_OVERRIDE_SEASON = 2025;
+
+/** Before WIDGET_DEFAULT_OVERRIDE_UNTIL, widgets default to 2025; after that, they follow the topbar. */
+export function getDefaultWidgetSeason(globalSeason: number): number {
+  if (new Date() < new Date(WIDGET_DEFAULT_OVERRIDE_UNTIL)) {
+    return WIDGET_DEFAULT_OVERRIDE_SEASON;
+  }
+  return globalSeason;
+}
 
 interface SeasonContextType {
   season: number;
