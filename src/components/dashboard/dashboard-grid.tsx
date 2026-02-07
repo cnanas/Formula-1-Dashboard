@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Responsive, verticalCompactor, type Layout, type ResponsiveLayouts } from "react-grid-layout";
-import { Pencil, Plus, RotateCcw, Check } from "lucide-react";
+import { Plus, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -18,14 +18,38 @@ import { LiveStatusWidget } from "./widgets/live-status-widget";
 import { NewsWidget } from "./widgets/news-widget";
 import { CalendarWidget } from "./widgets/calendar-widget";
 import { QuickLinksWidget } from "./widgets/quick-links-widget";
+import { CircuitInfoWidget } from "./widgets/circuit-info-widget";
+import { TeamPerformanceWidget } from "./widgets/team-performance-widget";
+import { SessionScheduleWidget } from "./widgets/session-schedule-widget";
+import { DriverH2HWidget } from "./widgets/driver-h2h-widget";
+import { useDashboardEdit } from "@/providers/dashboard-edit-provider";
 
 import "react-grid-layout/css/styles.css";
+
+// Get current season year
+const CURRENT_SEASON = new Date().getFullYear();
 
 // Widget registry
 const WIDGET_REGISTRY: Record<
   string,
-  { title: string; component: React.ComponentType; defaultSize: { w: number; h: number } }
+  { title: string; subtitle?: string; component: React.ComponentType; defaultSize: { w: number; h: number } }
 > = {
+  "circuit-info": {
+    title: "Schedule",
+    subtitle: "Current Circuit",
+    component: CircuitInfoWidget,
+    defaultSize: { w: 6, h: 6 },
+  },
+  standings: {
+    title: "Standings",
+    component: StandingsWidget,
+    defaultSize: { w: 4, h: 7 },
+  },
+  "constructor-standings": {
+    title: "Constructors",
+    component: ConstructorStandingsWidget,
+    defaultSize: { w: 4, h: 7 },
+  },
   countdown: {
     title: "Next Race",
     component: CountdownWidget,
@@ -36,16 +60,6 @@ const WIDGET_REGISTRY: Record<
     component: LiveStatusWidget,
     defaultSize: { w: 4, h: 4 },
   },
-  standings: {
-    title: "Driver Standings",
-    component: StandingsWidget,
-    defaultSize: { w: 4, h: 5 },
-  },
-  "constructor-standings": {
-    title: "Constructor Standings",
-    component: ConstructorStandingsWidget,
-    defaultSize: { w: 4, h: 5 },
-  },
   news: {
     title: "Latest News",
     component: NewsWidget,
@@ -53,56 +67,67 @@ const WIDGET_REGISTRY: Record<
   },
   calendar: {
     title: "Upcoming Races",
+    subtitle: `${CURRENT_SEASON} Calendar`,
     component: CalendarWidget,
     defaultSize: { w: 4, h: 4 },
   },
   "quick-links": {
     title: "Quick Links",
     component: QuickLinksWidget,
-    defaultSize: { w: 4, h: 3 },
+    defaultSize: { w: 4, h: 4 },
+  },
+  "team-performance": {
+    title: "Team Performance",
+    subtitle: "Season Statistics",
+    component: TeamPerformanceWidget,
+    defaultSize: { w: 6, h: 6 },
+  },
+  "session-schedule": {
+    title: "Race Weekend",
+    subtitle: "Session Schedule",
+    component: SessionScheduleWidget,
+    defaultSize: { w: 4, h: 5 },
+  },
+  "driver-h2h": {
+    title: "Driver Comparison",
+    subtitle: "Head-to-Head",
+    component: DriverH2HWidget,
+    defaultSize: { w: 6, h: 6 },
   },
 };
 
-const STORAGE_KEY = "f1dash_widget_layouts";
-const WIDGETS_KEY = "f1dash_active_widgets";
+const STORAGE_KEY = "f1dash_widget_layouts_v2";
+const WIDGETS_KEY = "f1dash_active_widgets_v2";
 
 const DEFAULT_WIDGETS = [
-  "countdown",
-  "live-status",
-  "quick-links",
+  "circuit-info",
   "standings",
   "constructor-standings",
   "news",
-  "calendar",
+  "quick-links",
 ];
 
 const DEFAULT_LAYOUTS: ResponsiveLayouts = {
   lg: [
-    { i: "countdown", x: 0, y: 0, w: 4, h: 3, minW: 3, minH: 2 },
-    { i: "live-status", x: 4, y: 0, w: 4, h: 4, minW: 3, minH: 3 },
-    { i: "quick-links", x: 8, y: 0, w: 4, h: 3, minW: 3, minH: 2 },
-    { i: "standings", x: 0, y: 3, w: 4, h: 5, minW: 3, minH: 3 },
-    { i: "constructor-standings", x: 4, y: 4, w: 4, h: 5, minW: 3, minH: 3 },
-    { i: "news", x: 8, y: 3, w: 4, h: 5, minW: 3, minH: 3 },
-    { i: "calendar", x: 0, y: 8, w: 4, h: 4, minW: 3, minH: 3 },
+    { i: "circuit-info", x: 0, y: 0, w: 6, h: 6, minW: 4, minH: 5 },
+    { i: "standings", x: 6, y: 0, w: 6, h: 7, minW: 4, minH: 5 },
+    { i: "constructor-standings", x: 0, y: 6, w: 6, h: 7, minW: 4, minH: 5 },
+    { i: "news", x: 6, y: 7, w: 6, h: 6, minW: 4, minH: 4 },
+    { i: "quick-links", x: 0, y: 13, w: 6, h: 4, minW: 3, minH: 3 },
   ],
   md: [
-    { i: "countdown", x: 0, y: 0, w: 5, h: 3, minW: 3, minH: 2 },
-    { i: "live-status", x: 5, y: 0, w: 5, h: 4, minW: 3, minH: 3 },
-    { i: "quick-links", x: 0, y: 3, w: 5, h: 3, minW: 3, minH: 2 },
-    { i: "standings", x: 5, y: 4, w: 5, h: 5, minW: 3, minH: 3 },
-    { i: "constructor-standings", x: 0, y: 6, w: 5, h: 5, minW: 3, minH: 3 },
-    { i: "news", x: 5, y: 9, w: 5, h: 5, minW: 3, minH: 3 },
-    { i: "calendar", x: 0, y: 11, w: 5, h: 4, minW: 3, minH: 3 },
+    { i: "circuit-info", x: 0, y: 0, w: 10, h: 6, minW: 4, minH: 5 },
+    { i: "standings", x: 0, y: 6, w: 5, h: 7, minW: 4, minH: 5 },
+    { i: "constructor-standings", x: 5, y: 6, w: 5, h: 7, minW: 4, minH: 5 },
+    { i: "news", x: 0, y: 13, w: 5, h: 6, minW: 4, minH: 4 },
+    { i: "quick-links", x: 5, y: 13, w: 5, h: 4, minW: 3, minH: 3 },
   ],
   sm: [
-    { i: "countdown", x: 0, y: 0, w: 6, h: 3, minW: 3, minH: 2 },
-    { i: "live-status", x: 0, y: 3, w: 6, h: 4, minW: 3, minH: 3 },
-    { i: "quick-links", x: 0, y: 7, w: 6, h: 3, minW: 3, minH: 2 },
-    { i: "standings", x: 0, y: 10, w: 6, h: 5, minW: 3, minH: 3 },
-    { i: "constructor-standings", x: 0, y: 15, w: 6, h: 5, minW: 3, minH: 3 },
-    { i: "news", x: 0, y: 20, w: 6, h: 5, minW: 3, minH: 3 },
-    { i: "calendar", x: 0, y: 25, w: 6, h: 4, minW: 3, minH: 3 },
+    { i: "circuit-info", x: 0, y: 0, w: 6, h: 6, minW: 4, minH: 5 },
+    { i: "standings", x: 0, y: 6, w: 6, h: 7, minW: 4, minH: 5 },
+    { i: "constructor-standings", x: 0, y: 13, w: 6, h: 7, minW: 4, minH: 5 },
+    { i: "news", x: 0, y: 20, w: 6, h: 6, minW: 4, minH: 4 },
+    { i: "quick-links", x: 0, y: 26, w: 6, h: 4, minW: 3, minH: 3 },
   ],
 };
 
@@ -150,9 +175,17 @@ export function DashboardGrid() {
   const containerRef = useRef<HTMLDivElement>(null);
   const containerWidth = useContainerWidth(containerRef);
   const [mounted, setMounted] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
   const [activeWidgets, setActiveWidgets] = useState<string[]>(DEFAULT_WIDGETS);
   const [layouts, setLayouts] = useState<ResponsiveLayouts>(DEFAULT_LAYOUTS);
+  
+  // Use the dashboard edit context
+  const { isEditing, setShowEditButton } = useDashboardEdit();
+
+  // Register this component with the context to show the edit button
+  useEffect(() => {
+    setShowEditButton(true);
+    return () => setShowEditButton(false);
+  }, [setShowEditButton]);
 
   useEffect(() => {
     setActiveWidgets(loadFromStorage(WIDGETS_KEY, DEFAULT_WIDGETS));
@@ -235,51 +268,31 @@ export function DashboardGrid() {
 
   return (
     <div ref={containerRef}>
-      {/* Toolbar */}
-      <div className="flex items-center gap-2 mb-4">
-        <Button
-          variant={isEditing ? "default" : "outline"}
-          size="sm"
-          onClick={() => setIsEditing(!isEditing)}
-        >
-          {isEditing ? (
-            <>
-              <Check className="h-4 w-4 mr-1" />
-              Done
-            </>
-          ) : (
-            <>
-              <Pencil className="h-4 w-4 mr-1" />
-              Edit Dashboard
-            </>
-          )}
-        </Button>
+      {/* Edit mode toolbar - only shown when editing */}
+      {isEditing && (
+        <div className="flex items-center gap-2 mb-4">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" disabled={availableWidgets.length === 0}>
+                <Plus className="h-4 w-4 mr-1" />
+                Add Widget
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              {availableWidgets.map(([id, widget]) => (
+                <DropdownMenuItem key={id} onClick={() => addWidget(id)}>
+                  {widget.title}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
-        {isEditing && (
-          <>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" disabled={availableWidgets.length === 0}>
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add Widget
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
-                {availableWidgets.map(([id, widget]) => (
-                  <DropdownMenuItem key={id} onClick={() => addWidget(id)}>
-                    {widget.title}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <Button variant="ghost" size="sm" onClick={resetLayout}>
-              <RotateCcw className="h-4 w-4 mr-1" />
-              Reset
-            </Button>
-          </>
-        )}
-      </div>
+          <Button variant="ghost" size="sm" onClick={resetLayout}>
+            <RotateCcw className="h-4 w-4 mr-1" />
+            Reset
+          </Button>
+        </div>
+      )}
 
       {/* Grid */}
       {mounted && (
@@ -305,6 +318,7 @@ export function DashboardGrid() {
               <div key={widgetId}>
                 <WidgetWrapper
                   title={widget.title}
+                  subtitle={widget.subtitle}
                   isEditing={isEditing}
                   onRemove={() => removeWidget(widgetId)}
                 >

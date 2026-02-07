@@ -1,8 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useTheme } from "next-themes";
-import { Moon, Sun, Radio, Menu } from "lucide-react";
+import { Radio, Menu, Pencil, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSessionStatus } from "@/hooks/use-session-status";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +13,7 @@ import {
 } from "@/components/ui/sheet";
 import { MobileNav } from "./mobile-nav";
 import { usePageTitle } from "@/providers/page-title-provider";
+import { useDashboardEdit } from "@/providers/dashboard-edit-provider";
 
 const PAGE_TITLES: Record<string, string> = {
   "/": "Dashboard",
@@ -40,9 +40,9 @@ function getStaticPageTitle(pathname: string): string {
 
 export function Topbar() {
   const pathname = usePathname();
-  const { theme, setTheme } = useTheme();
   const { isLive, latestSession } = useSessionStatus();
   const { dynamicTitle, subtitle } = usePageTitle();
+  const { isEditing, toggleEditing, showEditButton } = useDashboardEdit();
   
   // Use dynamic title if set, otherwise fall back to static title
   const pageTitle = dynamicTitle ?? getStaticPageTitle(pathname);
@@ -64,6 +64,28 @@ export function Topbar() {
             <MobileNav />
           </SheetContent>
         </Sheet>
+
+        {/* Edit Dashboard button - only shown on dashboard page */}
+        {showEditButton && (
+          <Button
+            variant={isEditing ? "default" : "outline"}
+            size="sm"
+            className="h-8"
+            onClick={toggleEditing}
+          >
+            {isEditing ? (
+              <>
+                <Check className="h-4 w-4 mr-1.5" />
+                Done
+              </>
+            ) : (
+              <>
+                <Pencil className="h-4 w-4 mr-1.5" />
+                Edit
+              </>
+            )}
+          </Button>
+        )}
 
         <div className="flex flex-col">
           <h1 className="text-lg font-semibold leading-tight">{pageTitle}</h1>
@@ -87,17 +109,7 @@ export function Topbar() {
       </div>
 
       <div className="flex items-center gap-2">
-        {/* Theme toggle */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-        >
-          <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-          <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-          <span className="sr-only">Toggle theme</span>
-        </Button>
+        {/* Empty for now - theme toggle moved to sidebar */}
       </div>
     </header>
   );
