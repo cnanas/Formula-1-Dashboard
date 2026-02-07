@@ -34,6 +34,7 @@ export function ChartTooltipContent({
   active?: boolean;
   payload?: readonly TooltipPayloadEntry[] | readonly unknown[];
   label?: string | number;
+  /** Permissive param types so Recharts Tooltip props can be spread without type errors */
   labelFormatter?: (label: unknown, payload: unknown[]) => React.ReactNode;
   formatter?: (value: unknown, name: string, item: TooltipPayloadEntry) => [React.ReactNode, React.ReactNode?];
   labelClassName?: string;

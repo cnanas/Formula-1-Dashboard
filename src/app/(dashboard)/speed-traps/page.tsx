@@ -138,9 +138,11 @@ export default function SpeedTrapsPage() {
                     className="fill-muted-foreground"
                   />
                   <Tooltip
-                    content={(props) => (
+                    content={({ active, payload, label }) => (
                       <ChartTooltipContent
-                        {...props}
+                        active={active}
+                        payload={payload}
+                        label={label}
                         formatter={(value) => [`${Number(value)} km/h`, "Top Speed"]}
                       />
                     )}

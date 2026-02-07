@@ -91,9 +91,11 @@ export function PositionChart({
               className="fill-muted-foreground"
             />
             <Tooltip
-              content={(props) => (
+              content={({ active, payload, label }) => (
                 <ChartTooltipContent
-                  {...props}
+                  active={active}
+                  payload={payload}
+                  label={label}
                   formatter={(value, name) => [`P${value}`, name]}
                 />
               )}

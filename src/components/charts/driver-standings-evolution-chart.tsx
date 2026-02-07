@@ -298,9 +298,11 @@ export function DriverStandingsEvolutionChart({
               />
               <YAxis tick={{ fontSize: 12 }} className="fill-muted-foreground" />
               <Tooltip
-                content={(props) => (
+                content={({ active, payload, label }) => (
                   <ChartTooltipContent
-                    {...props}
+                    active={active}
+                    payload={payload}
+                    label={label}
                     labelFormatter={(_, pl) => {
                       const first = pl[0] as { payload?: { fullName?: string } } | undefined;
                       return first?.payload?.fullName ?? "";
@@ -382,9 +384,11 @@ export function DriverStandingsEvolutionChart({
                 className="fill-muted-foreground"
               />
               <Tooltip
-                content={(props) => (
+                content={({ active, payload, label }) => (
                   <ChartTooltipContent
-                    {...props}
+                    active={active}
+                    payload={payload}
+                    label={label}
                     formatter={(value, name) => [`P${value}`, name]}
                     labelFormatter={(_, pl) => {
                       const first = pl[0] as { payload?: { fullName?: string } } | undefined;

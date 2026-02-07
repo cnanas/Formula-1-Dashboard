@@ -20,21 +20,15 @@ interface ConstructorPointsChartProps {
 }
 
 const RADIAN = Math.PI / 180;
-function renderCustomLabel({
-  cx,
-  cy,
-  midAngle,
-  innerRadius,
-  outerRadius,
-  percent,
-}: {
-  cx: number;
-  cy: number;
-  midAngle: number;
-  innerRadius: number;
-  outerRadius: number;
-  percent: number;
+function renderCustomLabel(props: {
+  cx?: number;
+  cy?: number;
+  midAngle?: number;
+  innerRadius?: number;
+  outerRadius?: number;
+  percent?: number;
 }) {
+  const { cx = 0, cy = 0, midAngle = 0, innerRadius = 0, outerRadius = 0, percent = 0 } = props;
   if (percent < 0.06) return null;
   const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
   const x = cx + radius * Math.cos(-midAngle * RADIAN);
@@ -97,9 +91,11 @@ export function ConstructorPointsChart({
               ))}
             </Pie>
             <Tooltip
-              content={(props) => (
+              content={({ active, payload, label }) => (
                 <ChartTooltipContent
-                  {...props}
+                  active={active}
+                  payload={payload}
+                  label={label}
                   formatter={(value, name, item) => {
                     const pct = totalPoints > 0 ? ((Number(value) / totalPoints) * 100).toFixed(1) : "0";
                     return [`${value} pts (${pct}%)`, (item as { name: string }).name];

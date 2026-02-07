@@ -195,9 +195,11 @@ export function PointsPerRaceChart({
               className="fill-muted-foreground"
             />
             <Tooltip
-              content={(props) => (
+              content={({ active, payload, label }) => (
                 <ChartTooltipContent
-                  {...props}
+                  active={active}
+                  payload={payload}
+                  label={label}
                   labelFormatter={(_, pl) => {
                     const first = pl[0] as { payload?: { fullName?: string } } | undefined;
                     return first?.payload?.fullName ?? "";
