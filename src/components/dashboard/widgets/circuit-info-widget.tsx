@@ -10,15 +10,13 @@ import {
   Thermometer,
   MapPin,
   Calendar,
-  Timer,
-  Route,
 } from "lucide-react";
 import { useOpenF1 } from "@/hooks/use-openf1";
 import { useSessionStatus } from "@/hooks/use-session-status";
+import { useSeason } from "@/providers/season-provider";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-
-const CURRENT_YEAR = new Date().getFullYear();
+import { TrackOutline } from "@/components/shared/track-outline";
 
 function WeatherIcon({ condition }: { condition?: string }) {
   const iconClass = "h-6 w-6";
@@ -39,11 +37,12 @@ function WeatherIcon({ condition }: { condition?: string }) {
 }
 
 export function CircuitInfoWidget() {
+  const { season } = useSeason();
   const { latestSession } = useSessionStatus();
 
-  // Get meetings for current year
+  // Get meetings for selected season
   const { data: meetings, isLoading: meetingsLoading } = useOpenF1("meetings", {
-    year: CURRENT_YEAR,
+    year: season,
   });
 
   // Find the next upcoming meeting or the most recent one
@@ -119,10 +118,13 @@ export function CircuitInfoWidget() {
         </span>
       </div>
 
-      {/* Track Visualization Placeholder */}
+      {/* Track Visualization */}
       <div className="relative bg-gradient-to-br from-muted/50 to-muted rounded-xl p-6 min-h-[140px] flex items-center justify-center">
-        <div className="absolute inset-0 flex items-center justify-center opacity-20">
-          <Route className="h-24 w-24" />
+        <div className="absolute right-4 top-1/2 -translate-y-1/2 w-28 h-28 text-foreground/15">
+          <TrackOutline
+            circuitShortName={currentMeeting.circuit_short_name}
+            strokeWidth={3}
+          />
         </div>
         <div className="relative text-center">
           <p className="text-2xl font-bold">{currentMeeting.meeting_name}</p>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useOpenF1 } from "@/hooks/use-openf1";
+import { useSeason } from "@/providers/season-provider";
 import { DriverAvatar } from "@/components/shared/driver-avatar";
 import { getTeamColor } from "@/lib/utils/colors";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,8 +15,6 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { Trophy, Flag, Zap, Target } from "lucide-react";
-
-const CURRENT_YEAR = new Date().getFullYear();
 
 interface ComparisonBarProps {
   label: string;
@@ -69,12 +68,13 @@ function ComparisonBar({ label, value1, value2, color1, color2, icon }: Comparis
 }
 
 export function DriverH2HWidget() {
+  const { season } = useSeason();
   const [driver1Number, setDriver1Number] = useState<string>("");
   const [driver2Number, setDriver2Number] = useState<string>("");
 
-  // Get sessions for current year
+  // Get sessions for selected season
   const { data: sessions, isLoading: sessionsLoading } = useOpenF1("sessions", {
-    year: CURRENT_YEAR,
+    year: season,
   });
 
   // Get the latest race session

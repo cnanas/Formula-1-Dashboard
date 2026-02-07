@@ -18,9 +18,11 @@ import { PageSkeleton } from "@/components/shared/loading-skeleton";
 import { EmptyState } from "@/components/shared/empty-state";
 import { usePageTitle } from "@/providers/page-title-provider";
 
+// Use fixed year to avoid hydration issues - default to 2025 for historical data
+const DEFAULT_YEAR = 2025;
+
 export default function HistoryPage() {
-  const currentYear = new Date().getFullYear();
-  const [year, setYear] = useState(currentYear.toString());
+  const [year, setYear] = useState(DEFAULT_YEAR.toString());
   const [selectedMeeting, setSelectedMeeting] = useState<string>("");
   const { setPageTitle, clearPageTitle } = usePageTitle();
 
@@ -60,7 +62,7 @@ export default function HistoryPage() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {[currentYear, currentYear - 1, currentYear - 2, currentYear - 3].map((y) => (
+            {[2026, 2025, 2024, 2023].map((y) => (
               <SelectItem key={y} value={y.toString()}>
                 {y}
               </SelectItem>

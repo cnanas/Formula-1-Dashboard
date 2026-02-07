@@ -26,7 +26,8 @@ export default function ComparePage() {
   const [driver2, setDriver2] = useState<string>("");
   const [meetingKey, setMeetingKey] = useState<string>("");
 
-  const currentYear = new Date().getFullYear();
+  // Use fixed year to avoid hydration issues - default to 2025 for data availability
+  const currentYear = 2025;
   const { data: meetings } = useOpenF1("meetings", { year: currentYear });
   const { data: drivers, isLoading: driversLoading } = useOpenF1("drivers", {
     session_key: "latest",
@@ -43,19 +44,28 @@ export default function ComparePage() {
   );
   const raceSessionKey = sessions[0]?.session_key;
 
-  const { data: laps } = useOpenF1(
+  // Fetch drivers for the specific race session (for driver info in that race)
+  const { data: raceDrivers } = useOpenF1(
+    "drivers",
+    { session_key: raceSessionKey?.toString() },
+    { enabled: !!raceSessionKey }
+  );
+
+  const { data: laps, isLoading: lapsLoading } = useOpenF1(
     "laps",
     { session_key: raceSessionKey?.toString() },
     { enabled: !!raceSessionKey }
   );
 
-  const { data: results } = useOpenF1(
+  const { data: results, isLoading: resultsLoading } = useOpenF1(
     "session_result",
     { session_key: raceSessionKey?.toString() },
     { enabled: !!raceSessionKey }
   );
 
-  const driverMap = new Map(drivers.map((d) => [d.driver_number, d]));
+  // Use race drivers if available, otherwise use latest drivers
+  const effectiveDrivers = raceSessionKey && raceDrivers.length > 0 ? raceDrivers : drivers;
+  const driverMap = new Map(effectiveDrivers.map((d) => [d.driver_number, d]));
   const standingsMap = new Map(
     standings.map((s) => [s.driver_number, s])
   );
@@ -64,6 +74,8 @@ export default function ComparePage() {
   const d2 = driver2 ? driverMap.get(Number(driver2)) : null;
   const s1 = driver1 ? standingsMap.get(Number(driver1)) : null;
   const s2 = driver2 ? standingsMap.get(Number(driver2)) : null;
+
+  const isRaceDataLoading = meetingKey && (lapsLoading || resultsLoading);
 
   if (driversLoading) return <PageSkeleton />;
 
@@ -85,6 +97,9 @@ export default function ComparePage() {
       (best, l) => (l.lap_duration! < (best ?? Infinity) ? l.lap_duration! : best),
       null as number | null
     );
+
+  // Check if we have race data
+  const hasRaceData = !!(meetingKey && raceSessionKey && !isRaceDataLoading);
 
   return (
     <div className="space-y-6">
@@ -152,6 +167,13 @@ export default function ComparePage() {
         />
       ) : (
         <div className="space-y-4">
+          {/* Loading indicator for race data */}
+          {isRaceDataLoading && (
+            <div className="text-center text-sm text-muted-foreground py-2">
+              Loading race data...
+            </div>
+          )}
+
           {/* Driver cards */}
           <div className="grid gap-4 md:grid-cols-2">
             <DriverCompareCard
@@ -159,12 +181,14 @@ export default function ComparePage() {
               standing={s1}
               racePosition={d1Result?.position}
               bestLap={d1BestLap}
+              showRaceData={hasRaceData}
             />
             <DriverCompareCard
               driver={d2}
               standing={s2}
               racePosition={d2Result?.position}
               bestLap={d2BestLap}
+              showRaceData={hasRaceData}
             />
           </div>
 
@@ -270,11 +294,13 @@ function DriverCompareCard({
   standing,
   racePosition,
   bestLap,
+  showRaceData = false,
 }: {
   driver: { headshot_url: string | null; name_acronym: string; full_name: string; team_name: string; team_colour: string | null };
   standing?: { points_current: number; position_current: number } | null;
   racePosition?: number;
   bestLap?: number | null;
+  showRaceData?: boolean;
 }) {
   const teamColor = getTeamColor(driver.team_colour);
   
@@ -305,8 +331,23 @@ function DriverCompareCard({
           </div>
           <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-border">
             <div className="text-center">
-              <p className="text-xs text-muted-foreground mb-1">Points</p>
-              {standing?.points_current !== undefined ? (
+              <p className="text-xs text-muted-foreground mb-1">
+                {showRaceData ? "Race Finish" : "Points"}
+              </p>
+              {showRaceData ? (
+                racePosition !== undefined ? (
+                  <div className="flex items-baseline justify-center">
+                    <span className="text-sm text-muted-foreground">P</span>
+                    <AnimatedCounter
+                      value={racePosition}
+                      duration={0.8}
+                      className="text-2xl font-bold"
+                    />
+                  </div>
+                ) : (
+                  <span className="text-2xl font-bold">DNF</span>
+                )
+              ) : standing?.points_current !== undefined ? (
                 <AnimatedCounter
                   value={standing.points_current}
                   duration={1.2}
@@ -317,7 +358,9 @@ function DriverCompareCard({
               )}
             </div>
             <div className="text-center">
-              <p className="text-xs text-muted-foreground mb-1">Position</p>
+              <p className="text-xs text-muted-foreground mb-1">
+                {showRaceData ? "Championship" : "Position"}
+              </p>
               {standing?.position_current !== undefined ? (
                 <div className="flex items-baseline justify-center">
                   <span className="text-sm text-muted-foreground">P</span>

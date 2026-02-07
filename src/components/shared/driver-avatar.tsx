@@ -7,13 +7,14 @@ interface DriverAvatarProps {
   headshotUrl: string | null;
   nameAcronym: string;
   teamColour: string | null;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
 }
 
 const sizeClasses = {
   sm: "h-8 w-8 text-xs",
   md: "h-10 w-10 text-sm",
   lg: "h-14 w-14 text-base",
+  xl: "h-24 w-24 text-xl",
 };
 
 export function DriverAvatar({

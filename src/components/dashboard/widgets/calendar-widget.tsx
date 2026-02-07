@@ -4,11 +4,14 @@ import Link from "next/link";
 import { format, isPast } from "date-fns";
 import { MapPin, CheckCircle2 } from "lucide-react";
 import { useOpenF1 } from "@/hooks/use-openf1";
+import { useSeason } from "@/providers/season-provider";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export function CalendarWidget() {
+  const { season } = useSeason();
+
   const { data: meetings, isLoading } = useOpenF1("meetings", {
-    year: new Date().getFullYear(),
+    year: season,
   });
 
   if (isLoading) {

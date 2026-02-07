@@ -23,17 +23,22 @@ import { TeamPerformanceWidget } from "./widgets/team-performance-widget";
 import { SessionScheduleWidget } from "./widgets/session-schedule-widget";
 import { DriverH2HWidget } from "./widgets/driver-h2h-widget";
 import { PointsPerRaceWidget } from "./widgets/points-per-race-widget";
+import { FastestPitstopWidget } from "./widgets/fastest-pitstop-widget";
+import { CrashDamageWidget } from "./widgets/crash-damage-widget";
+import { UsedElementsWidget } from "./widgets/used-elements-widget";
+import { TechUpgradesWidget } from "./widgets/tech-upgrades-widget";
+import { SocialBannerWidget } from "./widgets/social-banner-widget";
+import { NewLiveriesWidget } from "./widgets/new-liveries-widget";
+import { DriverProfileWidget } from "./widgets/driver-profile-widget";
+import { TeamProfileWidget } from "./widgets/team-profile-widget";
 import { useDashboardEdit } from "@/providers/dashboard-edit-provider";
 
 import "react-grid-layout/css/styles.css";
 
-// Get current season year
-const CURRENT_SEASON = new Date().getFullYear();
-
 // Widget registry
 const WIDGET_REGISTRY: Record<
   string,
-  { title: string; subtitle?: string; component: React.ComponentType; defaultSize: { w: number; h: number } }
+  { title: string; subtitle?: string; component: React.ComponentType; defaultSize: { w: number; h: number }; noHeader?: boolean; className?: string }
 > = {
   "circuit-info": {
     title: "Schedule",
@@ -55,6 +60,8 @@ const WIDGET_REGISTRY: Record<
     title: "Next Race",
     component: CountdownWidget,
     defaultSize: { w: 4, h: 3 },
+    noHeader: true,
+    className: "bg-transparent border-0 shadow-none",
   },
   "live-status": {
     title: "Live Session",
@@ -68,7 +75,7 @@ const WIDGET_REGISTRY: Record<
   },
   calendar: {
     title: "Upcoming Races",
-    subtitle: `${CURRENT_SEASON} Calendar`,
+    subtitle: "Race Calendar",
     component: CalendarWidget,
     defaultSize: { w: 4, h: 4 },
   },
@@ -101,40 +108,108 @@ const WIDGET_REGISTRY: Record<
     component: PointsPerRaceWidget,
     defaultSize: { w: 6, h: 6 },
   },
+  "fastest-pitstop": {
+    title: "Fastest Pit Stop",
+    component: FastestPitstopWidget,
+    defaultSize: { w: 4, h: 3 },
+  },
+  "crash-damage": {
+    title: "Crash Damage",
+    component: CrashDamageWidget,
+    defaultSize: { w: 4, h: 3 },
+  },
+  "used-elements": {
+    title: "Used Elements",
+    component: UsedElementsWidget,
+    defaultSize: { w: 4, h: 3 },
+  },
+  "tech-upgrades": {
+    title: "Tech Upgrades",
+    component: TechUpgradesWidget,
+    defaultSize: { w: 4, h: 3 },
+  },
+  "social-banner": {
+    title: "Stay Connected",
+    component: SocialBannerWidget,
+    defaultSize: { w: 8, h: 3 },
+    noHeader: true,
+    className: "bg-transparent border-0 shadow-none",
+  },
+  "new-liveries": {
+    title: "New Liveries",
+    component: NewLiveriesWidget,
+    defaultSize: { w: 4, h: 3 },
+    noHeader: true,
+    className: "bg-transparent border-0 shadow-none",
+  },
+  "driver-profile": {
+    title: "Driver Profile",
+    subtitle: "Favorite Driver",
+    component: DriverProfileWidget,
+    defaultSize: { w: 4, h: 6 },
+  },
+  "team-profile": {
+    title: "Team Profile",
+    subtitle: "Favorite Team",
+    component: TeamProfileWidget,
+    defaultSize: { w: 4, h: 6 },
+  },
 };
 
-const STORAGE_KEY = "f1dash_widget_layouts_v2";
-const WIDGETS_KEY = "f1dash_active_widgets_v2";
+const STORAGE_KEY = "f1dash_widget_layouts_v4";
+const WIDGETS_KEY = "f1dash_active_widgets_v4";
 
+// Default widgets for first-time users - clean, useful layout
 const DEFAULT_WIDGETS = [
-  "circuit-info",
   "standings",
   "constructor-standings",
+  "driver-h2h",
+  "circuit-info",
   "news",
-  "quick-links",
+  "driver-profile",
+  "team-profile",
+  "team-performance",
 ];
 
+// Default layout matching the user's preferred arrangement:
+// Left column: Standings, Constructors, Driver Comparison
+// Middle column: Circuit Info/Schedule, Latest News
+// Right column: Driver Profile, Team Profile, Team Performance
 const DEFAULT_LAYOUTS: ResponsiveLayouts = {
   lg: [
-    { i: "circuit-info", x: 0, y: 0, w: 6, h: 6, minW: 4, minH: 5 },
-    { i: "standings", x: 6, y: 0, w: 6, h: 7, minW: 4, minH: 5 },
-    { i: "constructor-standings", x: 0, y: 6, w: 6, h: 7, minW: 4, minH: 5 },
-    { i: "news", x: 6, y: 7, w: 6, h: 6, minW: 4, minH: 4 },
-    { i: "quick-links", x: 0, y: 13, w: 6, h: 4, minW: 3, minH: 3 },
+    // Left column (x: 0, w: 4)
+    { i: "standings", x: 0, y: 0, w: 4, h: 7, minW: 3, minH: 5 },
+    { i: "constructor-standings", x: 0, y: 7, w: 4, h: 7, minW: 3, minH: 5 },
+    { i: "driver-h2h", x: 0, y: 14, w: 4, h: 6, minW: 3, minH: 5 },
+    // Middle column (x: 4, w: 4)
+    { i: "circuit-info", x: 4, y: 0, w: 4, h: 6, minW: 4, minH: 5 },
+    { i: "news", x: 4, y: 6, w: 4, h: 6, minW: 3, minH: 4 },
+    // Right column (x: 8, w: 4)
+    { i: "driver-profile", x: 8, y: 0, w: 4, h: 6, minW: 3, minH: 5 },
+    { i: "team-profile", x: 8, y: 6, w: 4, h: 6, minW: 3, minH: 5 },
+    { i: "team-performance", x: 8, y: 12, w: 4, h: 6, minW: 3, minH: 5 },
   ],
   md: [
-    { i: "circuit-info", x: 0, y: 0, w: 10, h: 6, minW: 4, minH: 5 },
-    { i: "standings", x: 0, y: 6, w: 5, h: 7, minW: 4, minH: 5 },
-    { i: "constructor-standings", x: 5, y: 6, w: 5, h: 7, minW: 4, minH: 5 },
-    { i: "news", x: 0, y: 13, w: 5, h: 6, minW: 4, minH: 4 },
-    { i: "quick-links", x: 5, y: 13, w: 5, h: 4, minW: 3, minH: 3 },
+    // Two columns on medium screens
+    { i: "standings", x: 0, y: 0, w: 5, h: 7, minW: 3, minH: 5 },
+    { i: "constructor-standings", x: 5, y: 0, w: 5, h: 7, minW: 3, minH: 5 },
+    { i: "driver-h2h", x: 0, y: 7, w: 5, h: 6, minW: 3, minH: 5 },
+    { i: "circuit-info", x: 5, y: 7, w: 5, h: 6, minW: 4, minH: 5 },
+    { i: "news", x: 0, y: 13, w: 5, h: 6, minW: 3, minH: 4 },
+    { i: "driver-profile", x: 5, y: 13, w: 5, h: 6, minW: 3, minH: 5 },
+    { i: "team-profile", x: 0, y: 19, w: 5, h: 6, minW: 3, minH: 5 },
+    { i: "team-performance", x: 5, y: 19, w: 5, h: 6, minW: 3, minH: 5 },
   ],
   sm: [
-    { i: "circuit-info", x: 0, y: 0, w: 6, h: 6, minW: 4, minH: 5 },
-    { i: "standings", x: 0, y: 6, w: 6, h: 7, minW: 4, minH: 5 },
-    { i: "constructor-standings", x: 0, y: 13, w: 6, h: 7, minW: 4, minH: 5 },
-    { i: "news", x: 0, y: 20, w: 6, h: 6, minW: 4, minH: 4 },
-    { i: "quick-links", x: 0, y: 26, w: 6, h: 4, minW: 3, minH: 3 },
+    // Single column on small screens
+    { i: "standings", x: 0, y: 0, w: 6, h: 7, minW: 3, minH: 5 },
+    { i: "constructor-standings", x: 0, y: 7, w: 6, h: 7, minW: 3, minH: 5 },
+    { i: "circuit-info", x: 0, y: 14, w: 6, h: 6, minW: 4, minH: 5 },
+    { i: "news", x: 0, y: 20, w: 6, h: 6, minW: 3, minH: 4 },
+    { i: "driver-h2h", x: 0, y: 26, w: 6, h: 6, minW: 3, minH: 5 },
+    { i: "driver-profile", x: 0, y: 32, w: 6, h: 6, minW: 3, minH: 5 },
+    { i: "team-profile", x: 0, y: 38, w: 6, h: 6, minW: 3, minH: 5 },
+    { i: "team-performance", x: 0, y: 44, w: 6, h: 6, minW: 3, minH: 5 },
   ],
 };
 
@@ -328,6 +403,9 @@ export function DashboardGrid() {
                   subtitle={widget.subtitle}
                   isEditing={isEditing}
                   onRemove={() => removeWidget(widgetId)}
+                  noHeader={widget.noHeader}
+                  className={widget.className}
+                  noPadding={widget.noHeader}
                 >
                   <WidgetComponent />
                 </WidgetWrapper>

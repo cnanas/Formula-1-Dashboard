@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useOpenF1 } from "@/hooks/use-openf1";
+import { useSeason } from "@/providers/season-provider";
 import { getTeamColor } from "@/lib/utils/colors";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -12,8 +13,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-
-const CURRENT_YEAR = new Date().getFullYear();
 
 interface PerformanceData {
   wins: number;
@@ -63,11 +62,12 @@ function PerformanceBubble({
 }
 
 export function TeamPerformanceWidget() {
+  const { season } = useSeason();
   const [selectedTeam, setSelectedTeam] = useState<string>("");
 
-  // Get sessions for current year
+  // Get sessions for selected season
   const { data: sessions, isLoading: sessionsLoading } = useOpenF1("sessions", {
-    year: CURRENT_YEAR,
+    year: season,
   });
 
   // Get the latest race session
@@ -86,7 +86,7 @@ export function TeamPerformanceWidget() {
 
   // Get all race results for the season
   const { data: allSessions } = useOpenF1("sessions", {
-    year: CURRENT_YEAR,
+    year: season,
     session_type: "Race",
   });
 

@@ -4,11 +4,10 @@ import { useState, useEffect } from "react";
 import { format, formatDistanceToNow, isPast, isFuture } from "date-fns";
 import { Calendar, Clock, MapPin, Flag, Timer } from "lucide-react";
 import { useOpenF1 } from "@/hooks/use-openf1";
+import { useSeason } from "@/providers/season-provider";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-
-const CURRENT_YEAR = new Date().getFullYear();
 
 // Session type colors
 function getSessionColor(sessionType: string) {
@@ -101,9 +100,11 @@ function TimeUnit({ value, label }: { value: number; label: string }) {
 }
 
 export function SessionScheduleWidget() {
-  // Get meetings for current year
+  const { season } = useSeason();
+
+  // Get meetings for selected season
   const { data: meetings, isLoading: meetingsLoading } = useOpenF1("meetings", {
-    year: CURRENT_YEAR,
+    year: season,
   });
 
   // Find the next upcoming meeting

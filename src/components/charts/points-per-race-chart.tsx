@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   BarChart,
   Bar,
@@ -12,31 +12,20 @@ import {
   Legend,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useOpenF1 } from "@/hooks/use-openf1";
+import { useSeason } from "@/providers/season-provider";
 import { getTeamColor } from "@/lib/utils/colors";
 import type { ChampionshipDriver, Driver } from "@/types/openf1";
-
-const CURRENT_YEAR = new Date().getFullYear();
 
 interface PointsPerRaceChartProps {
   /** Max drivers to show (default 5). Use 0 for all. */
   maxDrivers?: number;
-  /** Initial year */
-  defaultYear?: number;
 }
 
 export function PointsPerRaceChart({
   maxDrivers = 5,
-  defaultYear = CURRENT_YEAR,
 }: PointsPerRaceChartProps) {
-  const [year, setYear] = useState(defaultYear);
+  const { season: year } = useSeason();
 
   const { data: sessions, isLoading: sessionsLoading } = useOpenF1("sessions", {
     year,
@@ -180,20 +169,8 @@ export function PointsPerRaceChart({
 
   return (
     <Card>
-      <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <CardHeader>
         <CardTitle className="text-base">Points per Race</CardTitle>
-        <Select value={year.toString()} onValueChange={(v) => setYear(Number(v))}>
-          <SelectTrigger className="w-28">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {[CURRENT_YEAR, CURRENT_YEAR - 1, CURRENT_YEAR - 2, CURRENT_YEAR - 3].map((y) => (
-              <SelectItem key={y} value={y.toString()}>
-                {y}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={350}>

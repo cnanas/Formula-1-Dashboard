@@ -11,6 +11,7 @@ import { PageTitleProvider } from "@/providers/page-title-provider";
 import { DashboardEditProvider } from "@/providers/dashboard-edit-provider";
 import { CircuitThemeProvider } from "@/providers/circuit-theme-provider";
 import { NavigationModeProvider, useNavigationMode } from "@/providers/navigation-mode-provider";
+import { SeasonProvider } from "@/providers/season-provider";
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const { collapsed } = useSidebar();
@@ -62,16 +63,18 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <CircuitThemeProvider>
-      <NavigationModeProvider>
-        <DashboardEditProvider>
-          <PageTitleProvider>
-            <TooltipProvider>
-              <DashboardContent>{children}</DashboardContent>
-            </TooltipProvider>
-          </PageTitleProvider>
-        </DashboardEditProvider>
-      </NavigationModeProvider>
-    </CircuitThemeProvider>
+    <SeasonProvider>
+      <CircuitThemeProvider>
+        <NavigationModeProvider>
+          <DashboardEditProvider>
+            <PageTitleProvider>
+              <TooltipProvider>
+                <DashboardContent>{children}</DashboardContent>
+              </TooltipProvider>
+            </PageTitleProvider>
+          </DashboardEditProvider>
+        </NavigationModeProvider>
+      </CircuitThemeProvider>
+    </SeasonProvider>
   );
 }

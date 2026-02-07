@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
@@ -32,7 +33,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-const CURRENT_YEAR = new Date().getFullYear();
+// Use fixed year to avoid hydration issues
+const CURRENT_YEAR = 2026;
 const MIN_YEAR = Math.max(2018, CURRENT_YEAR - 7);
 const SEASON_YEARS = Array.from(
   { length: CURRENT_YEAR - MIN_YEAR + 1 },
@@ -166,40 +168,48 @@ export default function StandingsPage() {
                               {standing.position_current}
                             </TableCell>
                             <TableCell>
-                              <div className="flex items-center gap-3">
-                                <DriverAvatar
-                                  headshotUrl={info?.headshot_url ?? null}
-                                  nameAcronym={
-                                    info?.name_acronym ??
-                                    String(standing.driver_number)
-                                  }
-                                  teamColour={info?.team_colour ?? null}
-                                  size="sm"
-                                />
-                                <div>
-                                  <p className="font-medium">
-                                    {info?.full_name ?? `#${standing.driver_number}`}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground sm:hidden">
-                                    {info?.team_name}
-                                  </p>
+                              <Link href={`/drivers/${standing.driver_number}`} className="block">
+                                <div className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                                  <DriverAvatar
+                                    headshotUrl={info?.headshot_url ?? null}
+                                    nameAcronym={
+                                      info?.name_acronym ??
+                                      String(standing.driver_number)
+                                    }
+                                    teamColour={info?.team_colour ?? null}
+                                    size="sm"
+                                  />
+                                  <div>
+                                    <p className="font-medium hover:text-primary transition-colors">
+                                      {info?.full_name ?? `#${standing.driver_number}`}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground sm:hidden">
+                                      {info?.team_name}
+                                    </p>
+                                  </div>
                                 </div>
-                              </div>
+                              </Link>
                             </TableCell>
                             <TableCell className="hidden sm:table-cell">
-                              <div className="flex items-center gap-2">
-                                <span
-                                  className="inline-block h-2.5 w-2.5 rounded-full"
-                                  style={{
-                                    backgroundColor: getTeamColor(
-                                      info?.team_colour ?? null
-                                    ),
-                                  }}
-                                />
-                                <span className="text-sm">
-                                  {info?.team_name ?? "-"}
-                                </span>
-                              </div>
+                              {info?.team_name ? (
+                                <Link href={`/teams/${encodeURIComponent(info.team_name)}`}>
+                                  <div className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                                    <span
+                                      className="inline-block h-2.5 w-2.5 rounded-full"
+                                      style={{
+                                        backgroundColor: getTeamColor(
+                                          info?.team_colour ?? null
+                                        ),
+                                      }}
+                                    />
+                                    <span className="text-sm hover:text-primary transition-colors">
+                                      {info.team_name}
+                                    </span>
+                                  </div>
+                                </Link>
+                              ) : (
+                                <span className="text-sm">-</span>
+                              )}
                             </TableCell>
                             <TableCell className="text-right font-mono font-bold">
                               {standing.points_current}
@@ -302,19 +312,21 @@ export default function StandingsPage() {
                               {team.position_current}
                             </TableCell>
                             <TableCell>
-                              <div className="flex items-center gap-3">
-                                <span
-                                  className="inline-block h-4 w-1 rounded-full"
-                                  style={{
-                                    backgroundColor: getTeamColor(
-                                      teamDriver?.team_colour ?? null
-                                    ),
-                                  }}
-                                />
-                                <span className="font-medium">
-                                  {team.team_name}
-                                </span>
-                              </div>
+                              <Link href={`/teams/${encodeURIComponent(team.team_name)}`}>
+                                <div className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                                  <span
+                                    className="inline-block h-4 w-1 rounded-full"
+                                    style={{
+                                      backgroundColor: getTeamColor(
+                                        teamDriver?.team_colour ?? null
+                                      ),
+                                    }}
+                                  />
+                                  <span className="font-medium hover:text-primary transition-colors">
+                                    {team.team_name}
+                                  </span>
+                                </div>
+                              </Link>
                             </TableCell>
                             <TableCell className="text-right font-mono font-bold">
                               {team.points_current}

@@ -11,8 +11,11 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { CountdownCard } from "@/components/cards/countdown-card";
 import type { Meeting } from "@/types/openf1";
 
+// Use fixed year to avoid hydration issues
+const CURRENT_YEAR = 2026;
+
 export default function CalendarPage() {
-  const currentYear = new Date().getFullYear();
+  const currentYear = CURRENT_YEAR;
   const { data: meetings, isLoading } = useOpenF1("meetings", {
     year: currentYear,
   });

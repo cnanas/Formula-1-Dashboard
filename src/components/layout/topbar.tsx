@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Radio, Menu, Pencil, Check } from "lucide-react";
+import { Radio, Menu, Pencil, Check, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSessionStatus } from "@/hooks/use-session-status";
 import { Badge } from "@/components/ui/badge";
@@ -11,10 +11,18 @@ import {
   SheetTrigger,
   SheetTitle,
 } from "@/components/ui/sheet";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { MobileNav } from "./mobile-nav";
 import { ThemeSelector } from "./theme-selector";
 import { usePageTitle } from "@/providers/page-title-provider";
 import { useDashboardEdit } from "@/providers/dashboard-edit-provider";
+import { useSeason } from "@/providers/season-provider";
 
 const PAGE_TITLES: Record<string, string> = {
   "/": "Dashboard",
@@ -44,7 +52,8 @@ export function Topbar() {
   const { isLive, latestSession } = useSessionStatus();
   const { dynamicTitle, subtitle } = usePageTitle();
   const { isEditing, toggleEditing, showEditButton } = useDashboardEdit();
-  
+  const { season, setSeason, availableSeasons } = useSeason();
+
   // Use dynamic title if set, otherwise fall back to static title
   const pageTitle = dynamicTitle ?? getStaticPageTitle(pathname);
 
@@ -110,6 +119,21 @@ export function Topbar() {
       </div>
 
       <div className="flex items-center gap-2">
+        {/* Season year selector */}
+        <Select value={season.toString()} onValueChange={(v) => setSeason(Number(v))}>
+          <SelectTrigger className="h-8 w-auto gap-1.5 text-sm font-medium border-border/50">
+            <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent align="end">
+            {availableSeasons.map((y) => (
+              <SelectItem key={y} value={y.toString()}>
+                Season {y}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
         {/* Theme selector for dynamic backgrounds */}
         <ThemeSelector />
       </div>

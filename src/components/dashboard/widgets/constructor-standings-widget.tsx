@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { Calendar } from "lucide-react";
 import { useOpenF1 } from "@/hooks/use-openf1";
+import { useSeason } from "@/providers/season-provider";
 import { getTeamColor } from "@/lib/utils/colors";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
 import {
   Select,
   SelectContent,
@@ -13,13 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-const CURRENT_YEAR = new Date().getFullYear();
-const MIN_YEAR = Math.max(2018, CURRENT_YEAR - 7);
-const SEASON_YEARS = Array.from(
-  { length: CURRENT_YEAR - MIN_YEAR + 1 },
-  (_, i) => CURRENT_YEAR - i
-);
+import { cn } from "@/lib/utils";
 
 // Position badge colors
 function getPositionBadgeStyle(position: number) {
@@ -35,12 +30,55 @@ function getPositionBadgeStyle(position: number) {
   }
 }
 
-export function ConstructorStandingsWidget() {
-  const [selectedYear, setSelectedYear] = useState(CURRENT_YEAR);
+// Available years for the widget
+// Use fixed max year to avoid hydration issues
+const MIN_YEAR = 2023;
+const MAX_YEAR = 2026;
+const AVAILABLE_YEARS = Array.from(
+  { length: MAX_YEAR - MIN_YEAR + 1 },
+  (_, i) => MAX_YEAR - i
+);
 
-  // Get sessions for the selected year
+const STORAGE_KEY = "f1-dashboard-constructor-standings-year";
+
+export function ConstructorStandingsWidget() {
+  const { season: globalSeason } = useSeason();
+  const [localYear, setLocalYear] = useState<number | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  // Load saved year from localStorage on mount
+  useEffect(() => {
+    setMounted(true);
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved && saved !== "global") {
+        const year = Number(saved);
+        if (!isNaN(year) && year >= MIN_YEAR && year <= MAX_YEAR) {
+          setLocalYear(year);
+        }
+      }
+    } catch {
+      // Ignore localStorage errors
+    }
+  }, []);
+
+  // Save year selection to localStorage
+  const handleYearChange = (value: string) => {
+    const newYear = value === "global" ? null : Number(value);
+    setLocalYear(newYear);
+    try {
+      localStorage.setItem(STORAGE_KEY, value);
+    } catch {
+      // Ignore localStorage errors
+    }
+  };
+  
+  // Use local year if set, otherwise use global season
+  const season = localYear ?? globalSeason;
+
+  // Get sessions for the selected season
   const { data: sessions, isLoading: sessionsLoading } = useOpenF1("sessions", {
-    year: selectedYear,
+    year: season,
     session_type: "Race",
   });
 
@@ -74,18 +112,23 @@ export function ConstructorStandingsWidget() {
 
   return (
     <div className="space-y-3">
-      <div className="w-28">
+      {/* Year selector */}
+      <div className="flex items-center justify-between">
         <Select
-          value={selectedYear.toString()}
-          onValueChange={(value) => setSelectedYear(Number(value))}
+          value={mounted ? (localYear?.toString() ?? "global") : "global"}
+          onValueChange={handleYearChange}
         >
-          <SelectTrigger className="h-8 text-xs">
+          <SelectTrigger className="h-7 w-auto gap-1.5 text-xs font-medium border-border/50">
+            <Calendar className="h-3 w-3 text-muted-foreground" />
             <SelectValue />
           </SelectTrigger>
-          <SelectContent>
-            {SEASON_YEARS.map((year) => (
-              <SelectItem key={year} value={year.toString()}>
-                {year}
+          <SelectContent align="start">
+            <SelectItem value="global">
+              Global ({globalSeason})
+            </SelectItem>
+            {AVAILABLE_YEARS.map((y) => (
+              <SelectItem key={y} value={y.toString()}>
+                {y}
               </SelectItem>
             ))}
           </SelectContent>
@@ -108,7 +151,7 @@ export function ConstructorStandingsWidget() {
       ) : sorted.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-8 text-center">
           <p className="text-sm text-muted-foreground">
-            No standings data available for {selectedYear}
+            No standings data available for {season}
           </p>
         </div>
       ) : (
