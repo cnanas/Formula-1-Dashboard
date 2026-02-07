@@ -13,7 +13,7 @@ interface NavigationModeContextType {
 
 // Default context value for SSR and initial render
 const defaultContextValue: NavigationModeContextType = {
-  mode: "sidebar",
+  mode: "bottom",
   setMode: () => {},
   toggleMode: () => {},
   mounted: false,
@@ -24,7 +24,7 @@ const NavigationModeContext = createContext<NavigationModeContextType>(defaultCo
 const STORAGE_KEY = "f1dash_nav_mode";
 
 export function NavigationModeProvider({ children }: { children: React.ReactNode }) {
-  const [mode, setModeState] = useState<NavigationMode>("sidebar");
+  const [mode, setModeState] = useState<NavigationMode>("bottom");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {

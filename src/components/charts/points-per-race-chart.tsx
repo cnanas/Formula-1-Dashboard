@@ -11,6 +11,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
+import { ChartTooltipContent } from "./chart-tooltip";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useOpenF1 } from "@/hooks/use-openf1";
 import { useSeason } from "@/providers/season-provider";
@@ -194,25 +195,26 @@ export function PointsPerRaceChart({
               className="fill-muted-foreground"
             />
             <Tooltip
-              contentStyle={{
-                backgroundColor: "hsl(var(--popover))",
-                borderColor: "hsl(var(--border))",
-                borderRadius: "var(--radius)",
-              }}
-              labelFormatter={(_, payload) =>
-                payload[0]?.payload?.fullName ?? ""
-              }
-              formatter={(value: number | undefined) => [`${value ?? 0} pts`, ""]}
+              content={(props) => (
+                <ChartTooltipContent
+                  {...props}
+                  labelFormatter={(_, pl) => {
+                    const first = pl[0] as { payload?: { fullName?: string } } | undefined;
+                    return first?.payload?.fullName ?? "";
+                  }}
+                  formatter={(value, name) => [`${Number(value ?? 0)} pts`, name]}
+                />
+              )}
             />
-            <Legend />
-            {driversToShow.map((key) => (
+            <Legend wrapperStyle={{ fontSize: 12 }} />
+            {driversToShow.map((key, idx) => (
               <Bar
                 key={key}
                 dataKey={key}
                 stackId="a"
                 fill={driverColors[key] ?? "#888"}
                 name={key}
-                radius={[0, 0, 0, 0]}
+                radius={idx === driversToShow.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
               />
             ))}
           </BarChart>

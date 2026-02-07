@@ -34,4 +34,17 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Caching (Upstash Redis)
+
+Server-side caching uses [Upstash Redis](https://upstash.com) so repeated requests (OpenF1 proxy, track history API) are served from cache and OpenF1 is called less often.
+
+1. Create a Redis database at [console.upstash.com](https://console.upstash.com) (free tier is enough).
+2. Copy the **REST URL** and **REST Token** from the database details.
+3. Add them to your environment:
+   - **Local:** create `.env.local` with `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`.
+   - **Vercel:** Project → Settings → Environment Variables, add the same two variables.
+
+If these variables are not set, the app runs without Redis; API routes still work and use their normal fetch/Next.js cache behavior.
+
 # Formula-1-Dashboard

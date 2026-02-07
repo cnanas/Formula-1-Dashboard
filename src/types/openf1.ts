@@ -100,6 +100,11 @@ export interface Meeting {
   meeting_name: string;
   meeting_official_name: string;
   year: number;
+  /** From OpenF1 API (optional) */
+  circuit_image?: string;
+  circuit_info_url?: string;
+  circuit_type?: string;
+  country_flag?: string;
 }
 
 export interface Overtake {

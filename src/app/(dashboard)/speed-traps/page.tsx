@@ -10,6 +10,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { ChartTooltipContent } from "@/components/charts/chart-tooltip";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -137,14 +138,14 @@ export default function SpeedTrapsPage() {
                     className="fill-muted-foreground"
                   />
                   <Tooltip
-                    formatter={(value) => [`${value} km/h`, "Top Speed"]}
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--popover))",
-                      borderColor: "hsl(var(--border))",
-                      borderRadius: "var(--radius)",
-                    }}
+                    content={(props) => (
+                      <ChartTooltipContent
+                        {...props}
+                        formatter={(value) => [`${Number(value)} km/h`, "Top Speed"]}
+                      />
+                    )}
                   />
-                  <Bar dataKey="speed" radius={[0, 4, 4, 0]} />
+                  <Bar dataKey="speed" radius={[0, 6, 6, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>

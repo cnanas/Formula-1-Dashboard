@@ -11,6 +11,7 @@ import {
   Zap,
   CloudSun,
   History,
+  MapPin,
 } from "lucide-react";
 import type { NavSection } from "@/types/app";
 
@@ -20,6 +21,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: "Dashboard", href: "/", icon: Home },
       { label: "Live Session", href: "/live", icon: Radio },
       { label: "Calendar", href: "/calendar", icon: Calendar },
+      { label: "Track History", href: "/tracks", icon: MapPin },
       { label: "Standings", href: "/standings", icon: Trophy },
       { label: "News", href: "/news", icon: Newspaper },
     ],

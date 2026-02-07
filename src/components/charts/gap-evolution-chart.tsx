@@ -10,6 +10,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
+import { ChartTooltipContent } from "./chart-tooltip";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Interval, Driver } from "@/types/openf1";
 import { getTeamColor } from "@/lib/utils/colors";
@@ -91,23 +92,25 @@ export function GapEvolutionChart({
               className="fill-muted-foreground"
             />
             <Tooltip
-              formatter={(value) => [`+${Number(value).toFixed(3)}s`, ""]}
-              contentStyle={{
-                backgroundColor: "hsl(var(--popover))",
-                borderColor: "hsl(var(--border))",
-                borderRadius: "var(--radius)",
-              }}
+              content={(props) => (
+                <ChartTooltipContent
+                  {...props}
+                  formatter={(value, name) => [`+${Number(value).toFixed(3)}s`, name]}
+                />
+              )}
             />
-            <Legend />
+            <Legend wrapperStyle={{ fontSize: 12 }} />
             {driverKeys.map(({ key, color }) => (
               <Line
                 key={key}
                 type="monotone"
                 dataKey={key}
                 stroke={color}
-                strokeWidth={1.5}
+                strokeWidth={2}
                 dot={false}
-                isAnimationActive={false}
+                activeDot={{ r: 4 }}
+                isAnimationActive
+                animationDuration={400}
                 connectNulls
               />
             ))}

@@ -11,6 +11,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { ChartTooltipContent } from "./chart-tooltip";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -297,12 +298,15 @@ export function DriverStandingsEvolutionChart({
               />
               <YAxis tick={{ fontSize: 12 }} className="fill-muted-foreground" />
               <Tooltip
-                labelFormatter={(_, payload) => payload[0]?.payload?.fullName ?? ""}
-                contentStyle={{
-                  backgroundColor: "hsl(var(--popover))",
-                  borderColor: "hsl(var(--border))",
-                  borderRadius: "var(--radius)",
-                }}
+                content={(props) => (
+                  <ChartTooltipContent
+                    {...props}
+                    labelFormatter={(_, pl) => {
+                      const first = pl[0] as { payload?: { fullName?: string } } | undefined;
+                      return first?.payload?.fullName ?? "";
+                    }}
+                  />
+                )}
               />
               {allDriverKeys.map((d) => (
                 <Line
@@ -378,13 +382,16 @@ export function DriverStandingsEvolutionChart({
                 className="fill-muted-foreground"
               />
               <Tooltip
-                formatter={(value, name) => [`P${value}`, name]}
-                labelFormatter={(_, payload) => payload[0]?.payload?.fullName ?? ""}
-                contentStyle={{
-                  backgroundColor: "hsl(var(--popover))",
-                  borderColor: "hsl(var(--border))",
-                  borderRadius: "var(--radius)",
-                }}
+                content={(props) => (
+                  <ChartTooltipContent
+                    {...props}
+                    formatter={(value, name) => [`P${value}`, name]}
+                    labelFormatter={(_, pl) => {
+                      const first = pl[0] as { payload?: { fullName?: string } } | undefined;
+                      return first?.payload?.fullName ?? "";
+                    }}
+                  />
+                )}
               />
               {allDriverKeys.map((d) => (
                 <Line

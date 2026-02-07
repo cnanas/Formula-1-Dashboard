@@ -18,6 +18,7 @@ import { getTeamColor } from "@/lib/utils/colors";
 import { PageSkeleton } from "@/components/shared/loading-skeleton";
 import { EmptyState } from "@/components/shared/empty-state";
 import { DriverStandingsEvolutionChart } from "@/components/charts/driver-standings-evolution-chart";
+import { ConstructorPointsChart } from "@/components/charts/constructor-points-chart";
 import { Trophy, TrendingUp, TrendingDown, Minus, Info } from "lucide-react";
 import {
   Select,
@@ -274,6 +275,8 @@ export default function StandingsPage() {
               description={`No constructor standings found for ${selectedYear}.`}
             />
           ) : (
+            <div className="space-y-6">
+              <ConstructorPointsChart teams={sortedTeams} drivers={driverInfo} />
             <Card>
               <CardContent className="p-0">
                 <TooltipProvider>
@@ -380,6 +383,7 @@ export default function StandingsPage() {
                 </TooltipProvider>
               </CardContent>
             </Card>
+            </div>
           )}
         </TabsContent>
       </Tabs>

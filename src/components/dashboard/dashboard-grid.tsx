@@ -2,14 +2,32 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Responsive, verticalCompactor, type Layout, type ResponsiveLayouts } from "react-grid-layout";
-import { Plus, RotateCcw } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  RotateCcw,
+  MapPin,
+  Trophy,
+  Award,
+  Timer,
+  Radio,
+  Newspaper,
+  Calendar,
+  Link2,
+  BarChart3,
+  CalendarClock,
+  GitCompareArrows,
+  TrendingUp,
+  CircleDot,
+  Car,
+  Box,
+  Wrench,
+  Share2,
+  Shirt,
+  User,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { WidgetWrapper } from "./widget-wrapper";
 import { CountdownWidget } from "./widgets/countdown-widget";
 import { StandingsWidget } from "./widgets/standings-widget";
@@ -38,98 +56,123 @@ import "react-grid-layout/css/styles.css";
 // Widget registry
 const WIDGET_REGISTRY: Record<
   string,
-  { title: string; subtitle?: string; component: React.ComponentType; defaultSize: { w: number; h: number }; noHeader?: boolean; className?: string }
+  {
+    title: string;
+    subtitle?: string;
+    icon: LucideIcon;
+    component: React.ComponentType;
+    defaultSize: { w: number; h: number };
+    noHeader?: boolean;
+    className?: string;
+  }
 > = {
   "circuit-info": {
     title: "Schedule",
     subtitle: "Current Circuit",
+    icon: MapPin,
     component: CircuitInfoWidget,
     defaultSize: { w: 6, h: 6 },
   },
   standings: {
     title: "Standings",
+    icon: Trophy,
     component: StandingsWidget,
     defaultSize: { w: 4, h: 7 },
   },
   "constructor-standings": {
     title: "Constructors",
+    icon: Award,
     component: ConstructorStandingsWidget,
     defaultSize: { w: 4, h: 7 },
   },
   countdown: {
     title: "Next Race",
     component: CountdownWidget,
+    icon: Timer,
     defaultSize: { w: 4, h: 3 },
     noHeader: true,
     className: "bg-transparent border-0 shadow-none",
   },
   "live-status": {
     title: "Live Session",
+    icon: Radio,
     component: LiveStatusWidget,
     defaultSize: { w: 4, h: 4 },
   },
   news: {
     title: "Latest News",
+    icon: Newspaper,
     component: NewsWidget,
     defaultSize: { w: 4, h: 5 },
   },
   calendar: {
     title: "Upcoming Races",
     subtitle: "Race Calendar",
+    icon: Calendar,
     component: CalendarWidget,
     defaultSize: { w: 4, h: 4 },
   },
   "quick-links": {
     title: "Quick Links",
+    icon: Link2,
     component: QuickLinksWidget,
     defaultSize: { w: 4, h: 4 },
   },
   "team-performance": {
     title: "Team Performance",
     subtitle: "Season Statistics",
+    icon: BarChart3,
     component: TeamPerformanceWidget,
     defaultSize: { w: 6, h: 6 },
   },
   "session-schedule": {
     title: "Race Weekend",
     subtitle: "Session Schedule",
+    icon: CalendarClock,
     component: SessionScheduleWidget,
     defaultSize: { w: 4, h: 5 },
   },
   "driver-h2h": {
     title: "Driver Comparison",
     subtitle: "Head-to-Head",
+    icon: GitCompareArrows,
     component: DriverH2HWidget,
     defaultSize: { w: 6, h: 6 },
   },
   "points-per-race": {
     title: "Points per Race",
     subtitle: "Season History",
+    icon: TrendingUp,
     component: PointsPerRaceWidget,
     defaultSize: { w: 6, h: 6 },
   },
   "fastest-pitstop": {
     title: "Fastest Pit Stop",
+    icon: CircleDot,
     component: FastestPitstopWidget,
     defaultSize: { w: 4, h: 3 },
   },
   "crash-damage": {
     title: "Crash Damage",
+    icon: Car,
     component: CrashDamageWidget,
     defaultSize: { w: 4, h: 3 },
   },
   "used-elements": {
     title: "Used Elements",
+    icon: Box,
     component: UsedElementsWidget,
     defaultSize: { w: 4, h: 3 },
   },
   "tech-upgrades": {
     title: "Tech Upgrades",
+    icon: Wrench,
     component: TechUpgradesWidget,
     defaultSize: { w: 4, h: 3 },
   },
   "social-banner": {
     title: "Stay Connected",
+    icon: Share2,
     component: SocialBannerWidget,
     defaultSize: { w: 8, h: 3 },
     noHeader: true,
@@ -137,6 +180,7 @@ const WIDGET_REGISTRY: Record<
   },
   "new-liveries": {
     title: "New Liveries",
+    icon: Shirt,
     component: NewLiveriesWidget,
     defaultSize: { w: 4, h: 3 },
     noHeader: true,
@@ -145,12 +189,14 @@ const WIDGET_REGISTRY: Record<
   "driver-profile": {
     title: "Driver Profile",
     subtitle: "Favorite Driver",
+    icon: User,
     component: DriverProfileWidget,
     defaultSize: { w: 4, h: 6 },
   },
   "team-profile": {
     title: "Team Profile",
     subtitle: "Favorite Team",
+    icon: Users,
     component: TeamProfileWidget,
     defaultSize: { w: 4, h: 6 },
   },
@@ -351,25 +397,29 @@ export function DashboardGrid() {
 
   return (
     <div ref={containerRef}>
-      {/* Edit mode toolbar - only shown when editing */}
+      {/* Edit mode toolbar - only shown when editing, aligned right */}
       {isEditing && (
-        <div className="flex items-center gap-2 mb-4">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" disabled={availableWidgets.length === 0}>
-                <Plus className="h-4 w-4 mr-1" />
-                Add Widget
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              {availableWidgets.map(([id, widget]) => (
-                <DropdownMenuItem key={id} onClick={() => addWidget(id)}>
-                  {widget.title}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
+        <div className="flex flex-wrap items-center justify-end gap-2 mb-4">
+          {/* Row of available widgets: icon + label, click to add */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            {availableWidgets.map(([id, widget]) => {
+              const Icon = widget.icon;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => addWidget(id)}
+                  className={cn(
+                    "inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium",
+                    "hover:bg-muted hover:border-primary/30 transition-colors"
+                  )}
+                >
+                  <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <span>{widget.title}</span>
+                </button>
+              );
+            })}
+          </div>
           <Button variant="ghost" size="sm" onClick={resetLayout}>
             <RotateCcw className="h-4 w-4 mr-1" />
             Reset

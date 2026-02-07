@@ -94,17 +94,40 @@ export function CircuitInfoWidget() {
   return (
     <div className="space-y-5">
       {/* Circuit Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-            <MapPin className="h-4 w-4" />
-            <span>{currentMeeting.location}, {currentMeeting.country_name}</span>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start gap-3 min-w-0">
+          {currentMeeting.circuit_image && (
+            <img
+              src={currentMeeting.circuit_image}
+              alt={currentMeeting.circuit_short_name}
+              className="h-12 w-16 object-contain rounded-lg bg-muted shrink-0"
+            />
+          )}
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1 flex-wrap">
+              {currentMeeting.country_flag && (
+                <img
+                  src={currentMeeting.country_flag}
+                  alt=""
+                  className="h-4 w-5 object-contain rounded shrink-0"
+                />
+              )}
+              <span className="flex items-center gap-1.5">
+                <MapPin className="h-4 w-4 shrink-0" />
+                {currentMeeting.location}, {currentMeeting.country_name}
+              </span>
+            </div>
+            <h4 className="text-lg font-bold">{currentMeeting.circuit_short_name}</h4>
+            {currentMeeting.circuit_type && (
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {currentMeeting.circuit_type}
+              </p>
+            )}
           </div>
-          <h4 className="text-lg font-bold">{currentMeeting.circuit_short_name}</h4>
         </div>
         <Badge 
           variant={isUpcoming ? "default" : "secondary"}
-          className="rounded-full px-3"
+          className="rounded-full px-3 shrink-0"
         >
           {isUpcoming ? "Upcoming" : "Completed"}
         </Badge>

@@ -4,12 +4,14 @@ import { useState } from "react";
 import {
   BarChart,
   Bar,
+  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { ChartTooltipContent } from "@/components/charts/chart-tooltip";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -123,19 +125,16 @@ export default function PitStopsPage() {
                     className="fill-muted-foreground"
                   />
                   <Tooltip
-                    formatter={(value) => [`${value}s`, "Average"]}
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--popover))",
-                      borderColor: "hsl(var(--border))",
-                      borderRadius: "var(--radius)",
-                    }}
-                  />
-                  <Bar dataKey="average" radius={[0, 4, 4, 0]}>
-                    {teamData.map((entry) => (
-                      <rect
-                        key={entry.team}
-                        fill={entry.color}
+                    content={(props) => (
+                      <ChartTooltipContent
+                        {...props}
+                        formatter={(value) => [`${Number(value)}s`, "Average"]}
                       />
+                    )}
+                  />
+                  <Bar dataKey="average" radius={[0, 6, 6, 0]}>
+                    {teamData.map((entry, index) => (
+                      <Cell key={entry.team} fill={entry.color} />
                     ))}
                   </Bar>
                 </BarChart>

@@ -1,7 +1,7 @@
 "use client";
 
 import { format, isPast } from "date-fns";
-import { MapPin, Clock, CheckCircle2, ChevronRight } from "lucide-react";
+import { MapPin, Clock, CheckCircle2, ChevronRight, History } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,7 @@ import { useOpenF1 } from "@/hooks/use-openf1";
 import { PageSkeleton } from "@/components/shared/loading-skeleton";
 import { EmptyState } from "@/components/shared/empty-state";
 import { CountdownCard } from "@/components/cards/countdown-card";
+import { getCircuitSlug } from "@/lib/constants/track-layouts";
 import type { Meeting } from "@/types/openf1";
 
 // Use fixed year to avoid hydration issues
@@ -60,15 +61,19 @@ function RaceCard({ meeting, round }: { meeting: Meeting; round: number }) {
   const completed = isPast(endDate);
   const isLive =
     isPast(startDate) && !isPast(endDate);
+  const trackSlug = getCircuitSlug(meeting.circuit_short_name);
 
   return (
-    <Link href={`/history?meeting=${meeting.meeting_key}`}>
-      <Card
-        className={`hover:bg-accent transition-colors cursor-pointer ${
-          isLive ? "border-red-500/50" : ""
-        }`}
-      >
-        <CardContent className="flex items-center gap-4 py-4">
+    <Card
+      className={`hover:bg-accent transition-colors ${
+        isLive ? "border-red-500/50" : ""
+      }`}
+    >
+      <CardContent className="flex items-center gap-4 py-4">
+        <Link
+          href={`/history?meeting=${meeting.meeting_key}`}
+          className="flex flex-1 items-center gap-4 min-w-0"
+        >
           {/* Round number */}
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted font-bold text-sm">
             R{round}
@@ -101,14 +106,25 @@ function RaceCard({ meeting, round }: { meeting: Meeting; round: number }) {
             </div>
           </div>
 
-          {/* Circuit name */}
-          <div className="hidden sm:block text-sm text-muted-foreground text-right">
-            {meeting.circuit_short_name}
-          </div>
-
           <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
-        </CardContent>
-      </Card>
-    </Link>
+        </Link>
+
+        {/* Circuit name + track history link */}
+        <div className="hidden sm:flex flex-col items-end gap-0.5 shrink-0">
+          <span className="text-sm text-muted-foreground">
+            {meeting.circuit_short_name}
+          </span>
+          {trackSlug && (
+            <Link
+              href={`/tracks/${trackSlug}`}
+              className="text-xs text-primary hover:underline flex items-center gap-0.5"
+            >
+              <History className="h-3 w-3" />
+              Track history
+            </Link>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }

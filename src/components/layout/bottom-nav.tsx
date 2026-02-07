@@ -17,6 +17,7 @@ import {
   Zap,
   CloudSun,
   History,
+  MapPin,
   MoreHorizontal,
   X,
   ChevronUp,
@@ -35,6 +36,7 @@ const PRIMARY_NAV = [
 // Secondary nav items (in expandable menu)
 const SECONDARY_NAV = [
   { label: "News", href: "/news", icon: Newspaper },
+  { label: "Track History", href: "/tracks", icon: MapPin },
   { label: "Compare", href: "/compare", icon: GitCompareArrows },
   { label: "Pit Stops", href: "/pitstops", icon: CircleDot },
   { label: "Overtakes", href: "/overtakes", icon: Zap },

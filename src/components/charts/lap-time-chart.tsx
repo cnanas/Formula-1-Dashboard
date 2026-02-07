@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatLapTime } from "@/lib/utils/formatting";
+import { ChartTooltipContent } from "./chart-tooltip";
 import type { Lap, Driver } from "@/types/openf1";
 import { getTeamColor } from "@/lib/utils/colors";
 
@@ -81,25 +82,27 @@ export function LapTimeChart({
               className="fill-muted-foreground"
             />
             <Tooltip
-              formatter={(value) => formatLapTime(value as number)}
-              labelFormatter={(label) => `Lap ${label}`}
-              contentStyle={{
-                backgroundColor: "hsl(var(--popover))",
-                borderColor: "hsl(var(--border))",
-                borderRadius: "var(--radius)",
-              }}
+              content={(props) => (
+                <ChartTooltipContent
+                  {...props}
+                  formatter={(value, name) => [formatLapTime(Number(value)), name]}
+                  labelFormatter={(label) => `Lap ${label}`}
+                />
+              )}
             />
-            <Legend />
+            <Legend wrapperStyle={{ fontSize: 12 }} />
             {driverKeys.map(({ key, color }) => (
               <Line
                 key={key}
                 type="monotone"
                 dataKey={key}
                 stroke={color}
-                strokeWidth={1.5}
+                strokeWidth={2}
                 dot={false}
-                activeDot={{ r: 3 }}
-                isAnimationActive={false}
+                activeDot={{ r: 4, strokeWidth: 2 }}
+                isAnimationActive
+                animationDuration={400}
+                animationEasing="ease-out"
                 connectNulls
               />
             ))}

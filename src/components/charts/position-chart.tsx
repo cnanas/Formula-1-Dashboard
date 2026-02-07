@@ -10,6 +10,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
+import { ChartTooltipContent } from "./chart-tooltip";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Position, Driver } from "@/types/openf1";
 import { getTeamColor } from "@/lib/utils/colors";
@@ -90,23 +91,25 @@ export function PositionChart({
               className="fill-muted-foreground"
             />
             <Tooltip
-              formatter={(value, name) => [`P${value}`, name]}
-              contentStyle={{
-                backgroundColor: "hsl(var(--popover))",
-                borderColor: "hsl(var(--border))",
-                borderRadius: "var(--radius)",
-              }}
+              content={(props) => (
+                <ChartTooltipContent
+                  {...props}
+                  formatter={(value, name) => [`P${value}`, name]}
+                />
+              )}
             />
-            <Legend />
+            <Legend wrapperStyle={{ fontSize: 12 }} />
             {driverKeys.map(({ key, color }) => (
               <Line
                 key={key}
                 type="stepAfter"
                 dataKey={key}
                 stroke={color}
-                strokeWidth={2}
+                strokeWidth={2.5}
                 dot={false}
-                isAnimationActive={false}
+                activeDot={{ r: 4 }}
+                isAnimationActive
+                animationDuration={400}
                 connectNulls
               />
             ))}

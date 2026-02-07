@@ -71,6 +71,7 @@ const CIRCUIT_SHORT_NAME_MAP: Record<string, string> = {
   "yas marina": "abudhabi",
   "yas marina circuit": "abudhabi",
   "abu dhabi": "abudhabi",
+  madrid: "madring",
   madring: "madring",
 };
 
@@ -97,3 +98,49 @@ export function getTrackLayout(circuitShortName: string): TrackLayout | null {
 
   return trackId ? TRACK_LAYOUTS[trackId] ?? null : null;
 }
+
+/** Returns URL slug for a circuit (e.g. "Monaco" -> "monaco", "Spa Francorchamps" -> "spa"). */
+export function getCircuitSlug(circuitShortName: string): string | null {
+  const normalized = normalizeCircuitShortName(circuitShortName);
+  const noCircuitSuffix = normalized.replace(/\bcircuit\b/g, "").replace(/\s+/g, " ").trim();
+  const trackId =
+    CIRCUIT_SHORT_NAME_MAP[normalized] ??
+    CIRCUIT_SHORT_NAME_MAP[noCircuitSuffix] ??
+    Object.entries(CIRCUIT_SHORT_NAME_MAP)
+      .sort((a, b) => b[0].length - a[0].length)
+      .find(([alias]) => normalized.includes(alias) || noCircuitSuffix.includes(alias))?.[1];
+  return trackId ?? null;
+}
+
+/** All track slugs that have a layout (for track index page). */
+export const TRACK_SLUGS = Object.keys(TRACK_LAYOUTS) as string[];
+
+/** Display names for track index (slug -> title). */
+export const TRACK_DISPLAY_NAMES: Record<string, string> = {
+  bahrain: "Bahrain",
+  sakhir: "Sakhir",
+  jeddah: "Jeddah",
+  melbourne: "Melbourne",
+  suzuka: "Suzuka",
+  shanghai: "Shanghai",
+  miami: "Miami",
+  imola: "Imola",
+  monaco: "Monaco",
+  montreal: "Montreal",
+  barcelona: "Barcelona",
+  spielberg: "Spielberg",
+  silverstone: "Silverstone",
+  budapest: "Budapest",
+  spa: "Spa-Francorchamps",
+  zandvoort: "Zandvoort",
+  monza: "Monza",
+  baku: "Baku",
+  singapore: "Singapore",
+  austin: "Austin",
+  mexico: "Mexico City",
+  interlagos: "Interlagos",
+  lasvegas: "Las Vegas",
+  losail: "Lusail",
+  abudhabi: "Abu Dhabi",
+  madring: "Madrid",
+};

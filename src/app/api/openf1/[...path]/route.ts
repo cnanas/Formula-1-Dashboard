@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { redisGet, redisSet } from "@/lib/cache/redis";
 
 const OPENF1_BASE = "https://api.openf1.org/v1";
 
@@ -11,12 +12,20 @@ export async function GET(
   const searchParams = request.nextUrl.searchParams.toString();
   const url = `${OPENF1_BASE}/${endpoint}${searchParams ? `?${searchParams}` : ""}`;
   const cachePolicy = getCachePolicy(endpoint);
+  const cacheKey = `openf1:${endpoint}${searchParams ? `?${searchParams}` : ""}`;
+
+  // Try Redis cache first (server-side)
+  const cached = await redisGet<unknown>(cacheKey);
+  if (cached != null) {
+    const cacheControl = `public, max-age=${cachePolicy.maxAgeSeconds}, s-maxage=${cachePolicy.maxAgeSeconds}, stale-while-revalidate=${cachePolicy.staleWhileRevalidateSeconds}`;
+    return NextResponse.json(cached, {
+      headers: { "Cache-Control": cacheControl },
+    });
+  }
 
   try {
     const response = await fetch(url, {
-      headers: {
-        Accept: "application/json",
-      },
+      headers: { Accept: "application/json" },
       next: { revalidate: cachePolicy.maxAgeSeconds },
     });
 
@@ -29,12 +38,13 @@ export async function GET(
 
     const data = await response.json();
 
+    // Store in Redis for next time
+    await redisSet(cacheKey, data, cachePolicy.maxAgeSeconds);
+
     const cacheControl = `public, max-age=${cachePolicy.maxAgeSeconds}, s-maxage=${cachePolicy.maxAgeSeconds}, stale-while-revalidate=${cachePolicy.staleWhileRevalidateSeconds}`;
 
     return NextResponse.json(data, {
-      headers: {
-        "Cache-Control": cacheControl,
-      },
+      headers: { "Cache-Control": cacheControl },
     });
   } catch (error) {
     console.error("OpenF1 proxy error:", error);
