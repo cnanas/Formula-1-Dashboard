@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { motion, useSpring, useTransform, useInView } from "framer-motion";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 
 interface AnimatedCounterProps {
@@ -17,7 +16,7 @@ interface AnimatedCounterProps {
 
 export function AnimatedCounter({
   value,
-  duration = 1.5,
+  duration = 1,
   decimals = 0,
   prefix = "",
   suffix = "",
@@ -26,42 +25,85 @@ export function AnimatedCounter({
   delay = 0,
 }: AnimatedCounterProps) {
   const ref = useRef<HTMLSpanElement>(null);
-  const isInView = useInView(ref, { once: true, margin: "-50px" });
+  const [displayValue, setDisplayValue] = useState(0);
   const [hasAnimated, setHasAnimated] = useState(false);
+  const animationRef = useRef<number | null>(null);
 
-  const spring = useSpring(0, {
-    duration: duration * 1000,
-    bounce: 0,
-  });
-
-  const display = useTransform(spring, (current) => {
-    if (formatFn) {
-      return formatFn(current);
-    }
-    return current.toFixed(decimals);
-  });
-
+  // Check if element is in view using IntersectionObserver (more performant than framer-motion)
   useEffect(() => {
-    if (isInView && !hasAnimated) {
-      const timeout = setTimeout(() => {
-        spring.set(value);
-        setHasAnimated(true);
-      }, delay * 1000);
-      return () => clearTimeout(timeout);
-    }
-  }, [isInView, value, spring, hasAnimated, delay]);
+    const element = ref.current;
+    if (!element) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !hasAnimated) {
+          // Start animation after delay
+          const timeout = setTimeout(() => {
+            animateValue(0, value, duration * 1000);
+            setHasAnimated(true);
+          }, delay * 1000);
+          return () => clearTimeout(timeout);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [value, duration, delay, hasAnimated]);
 
   // Update value if it changes after initial animation
   useEffect(() => {
     if (hasAnimated) {
-      spring.set(value);
+      animateValue(displayValue, value, 300); // Quick update
     }
-  }, [value, spring, hasAnimated]);
+  }, [value]);
+
+  const animateValue = (start: number, end: number, animDuration: number) => {
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+    }
+
+    const startTime = performance.now();
+    
+    const animate = (currentTime: number) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / animDuration, 1);
+      
+      // Ease out cubic
+      const easeOut = 1 - Math.pow(1 - progress, 3);
+      const current = start + (end - start) * easeOut;
+      
+      setDisplayValue(current);
+      
+      if (progress < 1) {
+        animationRef.current = requestAnimationFrame(animate);
+      }
+    };
+    
+    animationRef.current = requestAnimationFrame(animate);
+  };
+
+  // Cleanup animation on unmount
+  useEffect(() => {
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, []);
+
+  const formattedValue = useMemo(() => {
+    if (formatFn) {
+      return formatFn(displayValue);
+    }
+    return displayValue.toFixed(decimals);
+  }, [displayValue, formatFn, decimals]);
 
   return (
     <span ref={ref} className={cn("tabular-nums", className)}>
       {prefix}
-      <motion.span>{display}</motion.span>
+      <span>{formattedValue}</span>
       {suffix}
     </span>
   );
@@ -117,18 +159,16 @@ export function DeltaCounter({
     <div className={cn("flex items-center gap-2", className)}>
       <AnimatedCounter value={value} duration={duration} decimals={decimals} />
       {previousValue !== undefined && delta !== 0 && (
-        <motion.span
-          initial={{ opacity: 0, x: -10 }}
-          animate={{ opacity: 1, x: 0 }}
+        <span
           className={cn(
-            "text-sm font-medium",
+            "text-sm font-medium animate-in fade-in slide-in-from-left-2 duration-300",
             isPositive && "text-green-500",
             isNegative && "text-red-500"
           )}
         >
           {showSign && (isPositive ? "+" : "")}
           {delta.toFixed(decimals)}
-        </motion.span>
+        </span>
       )}
     </div>
   );

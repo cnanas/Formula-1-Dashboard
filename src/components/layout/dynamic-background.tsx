@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 import { useCircuitTheme } from "@/providers/circuit-theme-provider";
 
 interface DynamicBackgroundProps {
@@ -9,114 +9,129 @@ interface DynamicBackgroundProps {
 
 export function DynamicBackground({ className }: DynamicBackgroundProps) {
   const { theme } = useCircuitTheme();
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+  useEffect(() => {
+    // Check for reduced motion preference
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setPrefersReducedMotion(mediaQuery.matches);
+    
+    const handler = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
+    mediaQuery.addEventListener("change", handler);
+    return () => mediaQuery.removeEventListener("change", handler);
+  }, []);
 
   return (
-    <div className={`fixed inset-0 -z-10 overflow-hidden ${className}`}>
-      {/* Base gradient layer - MORE VIBRANT */}
-      <motion.div
-        className="absolute inset-0"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1 }}
-        key={theme.id} // Re-animate on theme change
+    <div className={`fixed inset-0 -z-10 overflow-hidden pointer-events-none ${className}`}>
+      {/* Base gradient layer - Static, no animation needed */}
+      <div
+        className="absolute inset-0 transition-all duration-1000"
         style={{
           background: `linear-gradient(${theme.gradientAngle}deg,
-            ${theme.primaryColor}40 0%,
-            ${theme.secondaryColor}25 50%,
+            ${theme.primaryColor}35 0%,
+            ${theme.secondaryColor}20 50%,
             transparent 100%)`,
         }}
       />
 
-      {/* Animated orb 1 - Primary color - LARGER & MORE VISIBLE */}
-      <motion.div
-        className="absolute rounded-full blur-[100px]"
-        style={{
-          width: "50vw",
-          height: "50vw",
-          background: `radial-gradient(circle, ${theme.primaryColor}50 0%, transparent 70%)`,
-        }}
-        animate={{
-          x: ["-10vw", "10vw", "-10vw"],
-          y: ["-5vh", "15vh", "-5vh"],
-          scale: [1, 1.2, 1],
-        }}
-        transition={{
-          duration: 20,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-        initial={{ x: "-10vw", y: "-5vh" }}
-      />
-
-      {/* Animated orb 2 - Secondary color - MORE VISIBLE */}
-      <motion.div
-        className="absolute right-0 bottom-0 rounded-full blur-[80px]"
-        style={{
-          width: "45vw",
-          height: "45vw",
-          background: `radial-gradient(circle, ${theme.secondaryColor}40 0%, transparent 70%)`,
-        }}
-        animate={{
-          x: ["10vw", "-10vw", "10vw"],
-          y: ["10vh", "-10vh", "10vh"],
-          scale: [1.1, 0.9, 1.1],
-        }}
-        transition={{
-          duration: 25,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-        initial={{ x: "10vw", y: "10vh" }}
-      />
-
-      {/* Animated orb 3 - Accent color - MORE VISIBLE */}
-      <motion.div
-        className="absolute left-1/2 top-1/2 rounded-full blur-[60px]"
-        style={{
-          width: "30vw",
-          height: "30vw",
-          background: `radial-gradient(circle, ${theme.accentColor}25 0%, transparent 70%)`,
-        }}
-        animate={{
-          x: ["-20vw", "20vw", "-20vw"],
-          y: ["-15vh", "15vh", "-15vh"],
-          scale: [0.8, 1.3, 0.8],
-        }}
-        transition={{
-          duration: 30,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-        initial={{ x: "-20vw", y: "-15vh" }}
-      />
-
-      {/* Grid pattern overlay */}
+      {/* Optimized orbs using CSS animations instead of JS */}
+      {/* Orb 1 - Primary color */}
       <div
-        className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]"
+        className="absolute will-change-transform"
         style={{
-          backgroundImage: `
-            linear-gradient(${theme.primaryColor}60 1px, transparent 1px),
-            linear-gradient(90deg, ${theme.primaryColor}60 1px, transparent 1px)
-          `,
-          backgroundSize: "50px 50px",
+          width: "min(50vw, 500px)",
+          height: "min(50vw, 500px)",
+          left: "-10%",
+          top: "-10%",
+          background: `radial-gradient(circle, ${theme.primaryColor}40 0%, transparent 60%)`,
+          filter: "blur(40px)",
+          animation: prefersReducedMotion ? "none" : "float1 30s ease-in-out infinite",
+          transform: "translate3d(0, 0, 0)", // Force GPU layer
         }}
       />
 
-      {/* Noise texture overlay for depth */}
+      {/* Orb 2 - Secondary color */}
+      <div
+        className="absolute will-change-transform"
+        style={{
+          width: "min(45vw, 450px)",
+          height: "min(45vw, 450px)",
+          right: "-10%",
+          bottom: "-10%",
+          background: `radial-gradient(circle, ${theme.secondaryColor}35 0%, transparent 60%)`,
+          filter: "blur(40px)",
+          animation: prefersReducedMotion ? "none" : "float2 35s ease-in-out infinite",
+          transform: "translate3d(0, 0, 0)",
+        }}
+      />
+
+      {/* Orb 3 - Accent color (smaller, subtler) */}
+      <div
+        className="absolute will-change-transform"
+        style={{
+          width: "min(25vw, 250px)",
+          height: "min(25vw, 250px)",
+          left: "40%",
+          top: "30%",
+          background: `radial-gradient(circle, ${theme.accentColor}20 0%, transparent 60%)`,
+          filter: "blur(30px)",
+          animation: prefersReducedMotion ? "none" : "float3 40s ease-in-out infinite",
+          transform: "translate3d(0, 0, 0)",
+        }}
+      />
+
+      {/* Grid pattern - simplified */}
       <div
         className="absolute inset-0 opacity-[0.02] dark:opacity-[0.04]"
         style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+          backgroundImage: `
+            linear-gradient(${theme.primaryColor}50 1px, transparent 1px),
+            linear-gradient(90deg, ${theme.primaryColor}50 1px, transparent 1px)
+          `,
+          backgroundSize: "60px 60px",
         }}
       />
 
-      {/* Softer vignette - less aggressive fade */}
+      {/* Vignette - static, no animation */}
       <div
         className="absolute inset-0"
         style={{
-          background: `radial-gradient(ellipse at center, transparent 40%, var(--background) 100%)`,
+          background: `radial-gradient(ellipse at center, transparent 30%, var(--background) 100%)`,
         }}
       />
+
+      {/* CSS Keyframes */}
+      <style jsx>{`
+        @keyframes float1 {
+          0%, 100% {
+            transform: translate3d(0, 0, 0) scale(1);
+          }
+          50% {
+            transform: translate3d(10vw, 10vh, 0) scale(1.1);
+          }
+        }
+        
+        @keyframes float2 {
+          0%, 100% {
+            transform: translate3d(0, 0, 0) scale(1.05);
+          }
+          50% {
+            transform: translate3d(-10vw, -10vh, 0) scale(0.95);
+          }
+        }
+        
+        @keyframes float3 {
+          0%, 100% {
+            transform: translate3d(0, 0, 0) scale(0.9);
+          }
+          33% {
+            transform: translate3d(15vw, -10vh, 0) scale(1.1);
+          }
+          66% {
+            transform: translate3d(-10vw, 10vh, 0) scale(1);
+          }
+        }
+      `}</style>
     </div>
   );
 }
@@ -201,22 +216,31 @@ export function AccentLine({
   const gradientDirection = position === "top" || position === "bottom" ? "90deg" : "180deg";
 
   if (animated) {
+    const animationName = position === "top" || position === "bottom"
+      ? "accentLineHorizontal"
+      : "accentLineVertical";
+    
     return (
-      <motion.div
-        className={`absolute ${positionStyles[position]}`}
-        style={{
-          background: `linear-gradient(${gradientDirection}, ${theme.primaryColor}, ${theme.secondaryColor}, ${theme.primaryColor})`,
-          backgroundSize: "200% 100%",
-        }}
-        animate={{
-          backgroundPosition: ["0% 0%", "100% 0%", "0% 0%"],
-        }}
-        transition={{
-          duration: 3,
-          repeat: Infinity,
-          ease: "linear",
-        }}
-      />
+      <>
+        <div
+          className={`absolute ${positionStyles[position]}`}
+          style={{
+            background: `linear-gradient(${gradientDirection}, ${theme.primaryColor}, ${theme.secondaryColor}, ${theme.primaryColor})`,
+            backgroundSize: "200% 100%",
+            animation: `${animationName} 3s linear infinite`,
+          }}
+        />
+        <style jsx>{`
+          @keyframes accentLineHorizontal {
+            0%, 100% { background-position: 0% 0%; }
+            50% { background-position: 100% 0%; }
+          }
+          @keyframes accentLineVertical {
+            0%, 100% { background-position: 0% 0%; }
+            50% { background-position: 0% 100%; }
+          }
+        `}</style>
+      </>
     );
   }
 
