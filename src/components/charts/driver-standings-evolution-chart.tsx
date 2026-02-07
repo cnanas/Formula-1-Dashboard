@@ -204,7 +204,7 @@ export function DriverStandingsEvolutionChart({
 
   const rankingData = raceSessions.map((session, idx) => {
     const meeting = meetingMap.get(session.meeting_key);
-    const row: Record<string, string | number> = {
+    const row: Record<string, string | number | null> = {
       race: raceLabel(meeting?.circuit_short_name ?? "", idx + 1),
       fullName: meeting?.meeting_name ?? `Race ${idx + 1}`,
     };
