@@ -100,9 +100,16 @@ export function DriverH2HWidget() {
 
   const isLoading = sessionsLoading || driversLoading || standingsLoading;
 
-  // Set default drivers if not selected
-  const d1Num = driver1Number || drivers[0]?.driver_number?.toString() || "";
-  const d2Num = driver2Number || drivers[1]?.driver_number?.toString() || "";
+  // Sort drivers by championship position for default selection
+  const sortedDrivers = [...drivers].sort((a, b) => {
+    const aStanding = standings.find((s) => s.driver_number === a.driver_number);
+    const bStanding = standings.find((s) => s.driver_number === b.driver_number);
+    return (aStanding?.position_current ?? 99) - (bStanding?.position_current ?? 99);
+  });
+
+  // Set default drivers if not selected - default to top 2 in championship
+  const d1Num = driver1Number || sortedDrivers[0]?.driver_number?.toString() || "";
+  const d2Num = driver2Number || sortedDrivers[1]?.driver_number?.toString() || "";
 
   const driver1 = drivers.find((d) => d.driver_number.toString() === d1Num);
   const driver2 = drivers.find((d) => d.driver_number.toString() === d2Num);

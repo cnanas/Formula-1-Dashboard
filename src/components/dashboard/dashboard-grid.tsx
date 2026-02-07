@@ -240,12 +240,13 @@ function useContainerWidth(ref: React.RefObject<HTMLDivElement | null>) {
 
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        setWidth(entry.contentRect.width);
+        const nextWidth = Math.round(entry.contentRect.width);
+        setWidth((prev) => (prev === nextWidth ? prev : nextWidth));
       }
     });
 
     observer.observe(ref.current);
-    setWidth(ref.current.offsetWidth);
+    setWidth(Math.round(ref.current.offsetWidth));
 
     return () => observer.disconnect();
   }, [ref]);

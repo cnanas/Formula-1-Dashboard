@@ -22,17 +22,25 @@ export function TrackOutline({
 
   if (!layout) return null;
 
+  const color = fillColor !== "none" ? fillColor : strokeColor;
+  const widthScale = Math.min(Math.max(strokeWidth / 2.5, 0.9), 1.1);
+  const maskSize = `${Math.round(widthScale * 100)}%`;
+
   return (
-    <svg
-      viewBox={layout.viewBox}
-      className={cn("w-full h-full", className)}
-      fill={fillColor}
-      stroke={strokeColor}
-      strokeWidth={strokeWidth}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d={layout.path} />
-    </svg>
+    <span
+      aria-hidden="true"
+      className={cn("block w-full h-full", className)}
+      style={{
+        backgroundColor: color,
+        WebkitMaskImage: `url(${layout.svgPath})`,
+        maskImage: `url(${layout.svgPath})`,
+        WebkitMaskRepeat: "no-repeat",
+        maskRepeat: "no-repeat",
+        WebkitMaskPosition: "center",
+        maskPosition: "center",
+        WebkitMaskSize: `${maskSize} ${maskSize}`,
+        maskSize: `${maskSize} ${maskSize}`,
+      }}
+    />
   );
 }

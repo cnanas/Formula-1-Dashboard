@@ -2,13 +2,14 @@
 
 import { createContext, useContext, useState, useCallback, useMemo } from "react";
 
-// Default to 2025 since 2026 season hasn't started yet
 // OpenF1 has data from 2023 onwards
-const DEFAULT_SEASON = 2025;
 const MIN_SEASON = 2023;
 // Use a fixed max year to avoid hydration issues
 // This should be updated at the start of each new year
 const MAX_SEASON = 2026;
+// Default to the most recent completed season with full data
+// Update this when a new season has completed races
+const DEFAULT_SEASON = 2025;
 
 interface SeasonContextType {
   season: number;

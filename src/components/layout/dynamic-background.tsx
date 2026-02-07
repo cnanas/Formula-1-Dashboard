@@ -37,7 +37,7 @@ export function DynamicBackground({ className }: DynamicBackgroundProps) {
       {/* Optimized orbs using CSS animations instead of JS */}
       {/* Orb 1 - Primary color */}
       <div
-        className="absolute will-change-transform"
+        className="dynamic-bg-orb absolute will-change-transform"
         style={{
           width: "min(50vw, 500px)",
           height: "min(50vw, 500px)",
@@ -52,7 +52,7 @@ export function DynamicBackground({ className }: DynamicBackgroundProps) {
 
       {/* Orb 2 - Secondary color */}
       <div
-        className="absolute will-change-transform"
+        className="dynamic-bg-orb absolute will-change-transform"
         style={{
           width: "min(45vw, 450px)",
           height: "min(45vw, 450px)",
@@ -67,7 +67,7 @@ export function DynamicBackground({ className }: DynamicBackgroundProps) {
 
       {/* Orb 3 - Accent color (smaller, subtler) */}
       <div
-        className="absolute will-change-transform"
+        className="dynamic-bg-orb absolute will-change-transform"
         style={{
           width: "min(25vw, 250px)",
           height: "min(25vw, 250px)",
@@ -82,7 +82,7 @@ export function DynamicBackground({ className }: DynamicBackgroundProps) {
 
       {/* Grid pattern - simplified */}
       <div
-        className="absolute inset-0 opacity-[0.02] dark:opacity-[0.04]"
+        className="dynamic-bg-grid absolute inset-0 opacity-[0.02] dark:opacity-[0.04]"
         style={{
           backgroundImage: `
             linear-gradient(${theme.primaryColor}50 1px, transparent 1px),

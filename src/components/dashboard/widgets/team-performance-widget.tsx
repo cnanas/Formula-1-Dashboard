@@ -90,21 +90,26 @@ export function TeamPerformanceWidget() {
     session_type: "Race",
   });
 
-  // Get unique teams
-  const teams = [...new Set(drivers.map((d) => d.team_name))].filter(Boolean);
-  const currentTeam = selectedTeam || teams[0] || "";
-
-  // Get team color
-  const teamDriver = drivers.find((d) => d.team_name === currentTeam);
-  const teamColor = getTeamColor(teamDriver?.team_colour ?? null);
-
-  // Calculate performance metrics (simulated based on available data)
-  // In a real app, you'd aggregate this from actual race results
+  // Get championship standings for sorting teams
   const { data: standings } = useOpenF1(
     "championship_teams",
     { session_key: sessionKey },
     { enabled: !!sessionKey }
   );
+
+  // Get unique teams sorted by championship position
+  const teams = [...new Set(drivers.map((d) => d.team_name))]
+    .filter(Boolean)
+    .sort((a, b) => {
+      const aStanding = standings.find((s) => s.team_name === a);
+      const bStanding = standings.find((s) => s.team_name === b);
+      return (aStanding?.position_current ?? 99) - (bStanding?.position_current ?? 99);
+    });
+  const currentTeam = selectedTeam || teams[0] || "";
+
+  // Get team color
+  const teamDriver = drivers.find((d) => d.team_name === currentTeam);
+  const teamColor = getTeamColor(teamDriver?.team_colour ?? null);
 
   const teamStanding = standings.find((s) => s.team_name === currentTeam);
   

@@ -18,15 +18,14 @@ export function CountdownWidget() {
   });
 
   const now = new Date();
-  const upcomingMeeting =
-    meetings.find((m) => new Date(m.date_start) > now) ??
-    meetings[meetings.length - 1] ??
-    null;
+  const upcomingMeeting = meetings.find((m) => new Date(m.date_start) > now) ?? null;
+  const fallbackMeeting = meetings[meetings.length - 1] ?? null;
+  const displayMeeting = upcomingMeeting ?? fallbackMeeting;
 
   // Find the next session for this meeting to determine session type
-  const meetingSessions = upcomingMeeting
+  const meetingSessions = displayMeeting
     ? sessions
-        .filter((s) => s.meeting_key === upcomingMeeting.meeting_key)
+        .filter((s) => s.meeting_key === displayMeeting.meeting_key)
         .sort((a, b) => new Date(a.date_start).getTime() - new Date(b.date_start).getTime())
     : [];
   const nextSession = meetingSessions.find((s) => new Date(s.date_start) > now) ?? meetingSessions[0];
@@ -47,7 +46,7 @@ export function CountdownWidget() {
     );
   }
 
-  if (!upcomingMeeting) {
+  if (!displayMeeting) {
     return (
       <div className="h-full bg-gradient-to-br from-red-700 to-red-900 rounded-2xl p-5 flex items-center justify-center">
         <p className="text-sm text-white/70">No upcoming race found</p>
@@ -58,13 +57,14 @@ export function CountdownWidget() {
   // Determine session type label
   const sessionType = nextSession?.session_name ?? "Race";
   const isTestingOrPractice = sessionType.toLowerCase().includes("practice") || sessionType.toLowerCase().includes("test");
+  const hasUpcomingMeeting = upcomingMeeting !== null;
 
   return (
     <div className="relative h-full bg-gradient-to-br from-red-700 via-red-800 to-red-900 rounded-2xl p-5 flex flex-col justify-between text-white overflow-hidden">
       {/* Track circuit background decoration */}
-      <div className="absolute top-1/2 right-0 -translate-y-1/2 translate-x-1/4 opacity-[0.08] pointer-events-none w-48 h-48">
+      <div className="absolute top-1/2 right-0 -translate-y-1/2 translate-x-1/4 opacity-[0.14] pointer-events-none w-48 h-48">
         <TrackOutline
-          circuitShortName={upcomingMeeting.circuit_short_name}
+          circuitShortName={displayMeeting.circuit_short_name}
           strokeColor="white"
           strokeWidth={3}
         />
@@ -74,17 +74,21 @@ export function CountdownWidget() {
       <div className="relative z-10">
         <div className="flex items-center gap-2 mb-1">
           <span className="inline-block text-xs font-semibold bg-white/20 backdrop-blur-sm rounded px-2 py-0.5">
-            {isTestingOrPractice ? "Testing" : sessionType}
+            {hasUpcomingMeeting ? (isTestingOrPractice ? "Testing" : sessionType) : "Season Complete"}
           </span>
           <span className="text-sm text-white/80 font-medium">
-            {upcomingMeeting.circuit_short_name}
+            {displayMeeting.circuit_short_name}
           </span>
         </div>
       </div>
 
       {/* Countdown */}
       <div className="relative z-10">
-        {countdown.isExpired ? (
+        {!hasUpcomingMeeting ? (
+          <p className="text-lg font-bold text-white">
+            Season complete
+          </p>
+        ) : countdown.isExpired ? (
           <p className="text-lg font-bold text-white">
             Race weekend is live!
           </p>

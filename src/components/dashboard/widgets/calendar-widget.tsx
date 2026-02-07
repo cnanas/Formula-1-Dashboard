@@ -37,16 +37,65 @@ export function CalendarWidget() {
     .slice(0, 5);
 
   if (upcoming.length === 0) {
+    const completed = [...meetings]
+      .filter((m) => new Date(m.date_end) < now)
+      .sort((a, b) => new Date(b.date_end).getTime() - new Date(a.date_end).getTime())
+      .slice(0, 5);
+
+    if (completed.length === 0) {
+      return (
+        <p className="text-sm text-muted-foreground text-center py-4">
+          No race data available
+        </p>
+      );
+    }
+
     return (
-      <p className="text-sm text-muted-foreground text-center py-4">
-        No upcoming races
-      </p>
+      <div className="space-y-1">
+        {completed.map((meeting) => {
+          const startDate = new Date(meeting.date_start);
+          return (
+            <div
+              key={meeting.meeting_key}
+              className="flex items-center gap-3 py-2 px-1 rounded-md hover:bg-muted/50 transition-colors"
+            >
+              <div className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-lg bg-muted text-[10px]">
+                <span className="font-bold leading-none">
+                  {format(startDate, "dd")}
+                </span>
+                <span className="text-muted-foreground uppercase">
+                  {format(startDate, "MMM")}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">
+                  {meeting.meeting_name}
+                </p>
+                <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                  <MapPin className="h-2.5 w-2.5" />
+                  {meeting.circuit_short_name}
+                </p>
+              </div>
+              <span className="text-[10px] text-muted-foreground font-medium inline-flex items-center gap-1">
+                <CheckCircle2 className="h-3 w-3" />
+                Done
+              </span>
+            </div>
+          );
+        })}
+        <Link
+          href="/calendar"
+          className="block text-xs text-center text-muted-foreground hover:text-foreground pt-2"
+        >
+          Full calendar →
+        </Link>
+      </div>
     );
   }
 
   return (
     <div className="space-y-1">
-      {upcoming.map((meeting, i) => {
+      {upcoming.map((meeting) => {
         const startDate = new Date(meeting.date_start);
         const isActive = isPast(startDate) && !isPast(new Date(meeting.date_end));
 

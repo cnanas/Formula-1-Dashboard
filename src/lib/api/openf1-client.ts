@@ -7,6 +7,13 @@ import { getCached, setCache } from "./cache";
 import { buildProxyPath, getEndpointCacheTTL, getEndpointPriority } from "./endpoints";
 import { getClientRateLimiter } from "./rate-limiter";
 
+const inFlightRequests = new Map<string, Promise<unknown>>();
+
+function getEndpointFromPath(path: string): OpenF1Endpoint | null {
+  const endpoint = path.replace(/^\//, "").split("?")[0] as OpenF1Endpoint;
+  return endpoint || null;
+}
+
 /**
  * Fetch data from OpenF1 via the local proxy API route.
  * Includes rate limiting, caching, and type safety.
@@ -55,14 +62,45 @@ export async function fetchOpenF1<E extends OpenF1Endpoint>(
  * The key format is: /endpoint?param=value
  */
 export async function openf1Fetcher<T>(path: string): Promise<T> {
-  const rateLimiter = getClientRateLimiter();
-  await rateLimiter.acquire(1);
+  const cacheKey = `openf1:${path}`;
+  const endpoint = getEndpointFromPath(path);
 
-  const response = await fetch(`/api/openf1${path}`);
-  if (!response.ok) {
-    throw new Error(
-      `OpenF1 API error: ${response.status} ${response.statusText}`
-    );
+  if (endpoint) {
+    const cached = getCached<T>(cacheKey);
+    if (cached) return cached;
   }
-  return response.json();
+
+  const inFlight = inFlightRequests.get(cacheKey) as Promise<T> | undefined;
+  if (inFlight) return inFlight;
+
+  const rateLimiter = getClientRateLimiter();
+  const priority = endpoint ? getEndpointPriority(endpoint) : 1;
+
+  const request = (async () => {
+    await rateLimiter.acquire(priority);
+
+    const response = await fetch(`/api/openf1${path}`);
+    if (!response.ok) {
+      throw new Error(
+        `OpenF1 API error: ${response.status} ${response.statusText}`
+      );
+    }
+
+    const data = (await response.json()) as T;
+
+    if (endpoint) {
+      const { ttl, persist } = getEndpointCacheTTL(endpoint);
+      setCache(cacheKey, data, ttl, persist);
+    }
+
+    return data;
+  })();
+
+  inFlightRequests.set(cacheKey, request);
+
+  try {
+    return await request;
+  } finally {
+    inFlightRequests.delete(cacheKey);
+  }
 }

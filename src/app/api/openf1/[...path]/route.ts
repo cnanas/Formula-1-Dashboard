@@ -10,12 +10,14 @@ export async function GET(
   const endpoint = path.join("/");
   const searchParams = request.nextUrl.searchParams.toString();
   const url = `${OPENF1_BASE}/${endpoint}${searchParams ? `?${searchParams}` : ""}`;
+  const cachePolicy = getCachePolicy(endpoint);
 
   try {
     const response = await fetch(url, {
       headers: {
         Accept: "application/json",
       },
+      next: { revalidate: cachePolicy.maxAgeSeconds },
     });
 
     if (!response.ok) {
@@ -27,8 +29,7 @@ export async function GET(
 
     const data = await response.json();
 
-    // Set cache headers based on data type
-    const cacheControl = getCacheControl(endpoint);
+    const cacheControl = `public, max-age=${cachePolicy.maxAgeSeconds}, s-maxage=${cachePolicy.maxAgeSeconds}, stale-while-revalidate=${cachePolicy.staleWhileRevalidateSeconds}`;
 
     return NextResponse.json(data, {
       headers: {
@@ -44,29 +45,32 @@ export async function GET(
   }
 }
 
-function getCacheControl(endpoint: string): string {
+function getCachePolicy(endpoint: string): {
+  maxAgeSeconds: number;
+  staleWhileRevalidateSeconds: number;
+} {
   switch (endpoint) {
     case "meetings":
-      return "public, s-maxage=86400, stale-while-revalidate=3600";
+      return { maxAgeSeconds: 86_400, staleWhileRevalidateSeconds: 3_600 };
     case "sessions":
     case "drivers":
-      return "public, s-maxage=3600, stale-while-revalidate=600";
+      return { maxAgeSeconds: 3_600, staleWhileRevalidateSeconds: 600 };
     case "championship_drivers":
     case "championship_teams":
-      return "public, s-maxage=3600, stale-while-revalidate=300";
+      return { maxAgeSeconds: 3_600, staleWhileRevalidateSeconds: 300 };
     case "laps":
     case "stints":
     case "pit":
     case "overtakes":
     case "session_result":
     case "starting_grid":
-      return "public, s-maxage=604800, stale-while-revalidate=86400";
+      return { maxAgeSeconds: 604_800, staleWhileRevalidateSeconds: 86_400 };
     case "position":
     case "intervals":
     case "car_data":
     case "location":
-      return "public, s-maxage=4, stale-while-revalidate=2";
+      return { maxAgeSeconds: 4, staleWhileRevalidateSeconds: 2 };
     default:
-      return "public, s-maxage=60, stale-while-revalidate=30";
+      return { maxAgeSeconds: 60, staleWhileRevalidateSeconds: 30 };
   }
 }
