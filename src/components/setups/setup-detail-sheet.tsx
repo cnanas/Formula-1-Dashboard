@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useCallback } from "react";
+import { useRef, useCallback, useEffect } from "react";
 import {
   Sheet,
   SheetContent,
@@ -80,26 +80,104 @@ export function SetupDetailSheet({
   onOpenChange,
 }: SetupDetailSheetProps) {
   const theme = CIRCUIT_THEMES[circuitKey] ?? CIRCUIT_THEMES.bahrain;
+  const handleRef = useRef<HTMLDivElement>(null);
   const dragStartY = useRef<number | null>(null);
+  const isDragging = useRef(false);
 
-  const handlePointerDown = useCallback(
-    (e: React.PointerEvent) => {
-      dragStartY.current = e.clientY;
-    },
-    []
-  );
+  // Touch event handlers for mobile swipe-to-close
+  useEffect(() => {
+    const handle = handleRef.current;
+    if (!handle || !open) return;
 
-  const handlePointerUp = useCallback(
-    (e: React.PointerEvent) => {
-      if (dragStartY.current === null) return;
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 1) {
+        dragStartY.current = e.touches[0].clientY;
+        isDragging.current = true;
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      // Prevent default to stop any scroll behavior on the handle
+      if (isDragging.current) {
+        e.preventDefault();
+      }
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (!isDragging.current || dragStartY.current === null) return;
+      
+      const touch = e.changedTouches[0];
+      if (touch) {
+        const deltaY = touch.clientY - dragStartY.current;
+        if (deltaY > SWIPE_CLOSE_THRESHOLD_PX) {
+          onOpenChange(false);
+        }
+      }
+      
+      dragStartY.current = null;
+      isDragging.current = false;
+    };
+
+    const handleTouchCancel = () => {
+      dragStartY.current = null;
+      isDragging.current = false;
+    };
+
+    // Add touch event listeners with passive: false to allow preventDefault
+    handle.addEventListener("touchstart", handleTouchStart, { passive: true });
+    handle.addEventListener("touchmove", handleTouchMove, { passive: false });
+    handle.addEventListener("touchend", handleTouchEnd, { passive: true });
+    handle.addEventListener("touchcancel", handleTouchCancel, { passive: true });
+
+    return () => {
+      handle.removeEventListener("touchstart", handleTouchStart);
+      handle.removeEventListener("touchmove", handleTouchMove);
+      handle.removeEventListener("touchend", handleTouchEnd);
+      handle.removeEventListener("touchcancel", handleTouchCancel);
+    };
+  }, [open, onOpenChange]);
+
+  // Mouse drag handlers for desktop - using document-level listeners for smooth dragging
+  useEffect(() => {
+    if (!open) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging.current || dragStartY.current === null) return;
+      // Optional: could add visual feedback here during drag
+    };
+
+    const handleMouseUp = (e: MouseEvent) => {
+      if (!isDragging.current || dragStartY.current === null) return;
+      
       const deltaY = e.clientY - dragStartY.current;
       if (deltaY > SWIPE_CLOSE_THRESHOLD_PX) {
         onOpenChange(false);
       }
+      
       dragStartY.current = null;
-    },
-    [onOpenChange]
-  );
+      isDragging.current = false;
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+
+    // Add document-level listeners for mouse drag
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [open, onOpenChange]);
+
+  // Mouse down handler for desktop drag initiation
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    dragStartY.current = e.clientY;
+    isDragging.current = true;
+    document.body.style.cursor = "grabbing";
+    document.body.style.userSelect = "none";
+  }, []);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -108,29 +186,14 @@ export function SetupDetailSheet({
         className="h-[85vh] max-h-[800px] rounded-t-2xl p-0 flex flex-col"
         showCloseButton={false}
       >
-        {/* Handle bar: swipe down to close */}
+        {/* Handle bar: swipe/drag down to close */}
         <div
-          className="flex justify-center items-center pt-2 pb-4 shrink-0 touch-none select-none min-h-[2.5rem] [cursor:grab] active:[cursor:grabbing]"
-          style={{ cursor: "grab" }}
-          onPointerDown={(e) => {
-            (e.currentTarget as HTMLElement).style.cursor = "grabbing";
-            handlePointerDown(e);
-          }}
-          onPointerUp={(e) => {
-            (e.currentTarget as HTMLElement).style.cursor = "grab";
-            handlePointerUp(e);
-          }}
-          onPointerLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.cursor = "grab";
-            handlePointerUp(e);
-          }}
-          onPointerCancel={(e) => {
-            (e.currentTarget as HTMLElement).style.cursor = "grab";
-            handlePointerUp(e);
-          }}
+          ref={handleRef}
+          className="flex justify-center items-center pt-2 pb-4 shrink-0 select-none min-h-[2.5rem] cursor-grab active:cursor-grabbing"
+          onMouseDown={handleMouseDown}
           role="button"
           tabIndex={0}
-          aria-label="Swipe down to close"
+          aria-label="Drag down to close"
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") onOpenChange(false);
           }}
