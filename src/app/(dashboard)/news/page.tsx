@@ -4,7 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import useSWR from "swr";
 import { format } from "date-fns";
-import { ExternalLink, Newspaper, ImageOff } from "lucide-react";
+import { ExternalLink, Newspaper } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -102,8 +102,10 @@ export default function NewsPage() {
                         unoptimized
                       />
                     ) : (
-                      <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
-                        <ImageOff className="h-8 w-8 text-muted-foreground/50" />
+                      <div className={`absolute inset-0 flex items-center justify-center bg-gradient-to-br ${style.bg} to-muted/30`}>
+                        <span className={`text-xl font-bold tracking-tight opacity-90 ${style.text}`}>
+                          {item.source}
+                        </span>
                       </div>
                     )}
                     {/* Source badge overlay */}
@@ -117,17 +119,15 @@ export default function NewsPage() {
                     </div>
                   </div>
                   
-                  <CardContent className="pt-4 flex flex-col h-[140px]">
-                    <div className="flex items-center gap-2 mb-2">
-                      {item.pubDate && (
-                        <span className="text-xs text-muted-foreground">
-                          {format(new Date(item.pubDate), "MMM d, yyyy")}
-                        </span>
-                      )}
-                    </div>
-                    <h3 className="font-semibold text-sm leading-snug mb-2 line-clamp-2 group-hover:text-primary transition-colors">
+                  <CardContent className="pt-4 flex flex-col h-[160px]">
+                    <h3 className="font-semibold text-lg leading-snug mb-2 line-clamp-2 group-hover:text-primary transition-colors">
                       {item.title}
                     </h3>
+                    {item.pubDate && (
+                      <span className="text-sm text-muted-foreground mb-2">
+                        {format(new Date(item.pubDate), "MMM d, yyyy")}
+                      </span>
+                    )}
                     <p className="text-xs text-muted-foreground line-clamp-2 flex-1">
                       {item.description}
                     </p>

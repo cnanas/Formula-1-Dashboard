@@ -8,8 +8,6 @@ import {
   BarChart3,
   GitCompareArrows,
   CircleDot,
-  Gauge,
-  Zap,
   CloudSun,
   MapPin,
   Gamepad2,
@@ -34,8 +32,6 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { label: "Head to Head", href: "/compare", icon: GitCompareArrows },
       { label: "Pit Stops", href: "/pitstops", icon: CircleDot },
-      { label: "Overtakes", href: "/overtakes", icon: Zap },
-      { label: "Speed Traps", href: "/speed-traps", icon: Gauge },
       { label: "Weather", href: "/weather", icon: CloudSun },
     ],
   },

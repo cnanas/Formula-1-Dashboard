@@ -33,8 +33,6 @@ const PAGE_TITLES: Record<string, string> = {
   "/news": "News",
   "/compare": "Head to Head",
   "/pitstops": "Pit Stop Analytics",
-  "/overtakes": "Overtake Tracker",
-  "/speed-traps": "Speed Traps",
   "/weather": "Weather",
   "/history": "History",
 };

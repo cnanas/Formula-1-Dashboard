@@ -8,7 +8,6 @@ import {
   GitCompareArrows,
   CircleDot,
   Gauge,
-  Zap,
   CloudSun,
   MapPin,
   Gamepad2,
@@ -21,7 +20,7 @@ export interface NavItem {
   icon: LucideIcon;
 }
 
-// Default order: Home, Live, Calendar, Game Setups, News, Standings, Track History, Compare, Pit Stops, Overtakes, Speed Traps, Weather, Game Telemetry (last)
+// Default order: Home, Live, Calendar, Game Setups, News, Standings, Track History, Compare, Pit Stops, Weather, Game Telemetry (last)
 export const DEFAULT_NAV_ORDER: string[] = [
   "home",
   "live",
@@ -32,8 +31,6 @@ export const DEFAULT_NAV_ORDER: string[] = [
   "track-history",
   "compare",
   "pitstops",
-  "overtakes",
-  "speed-traps",
   "weather",
   "game-telemetry",
 ];
@@ -49,8 +46,6 @@ export const NAV_ITEMS: Record<string, NavItem> = {
   "track-history": { id: "track-history", label: "Track History", href: "/tracks", icon: MapPin },
   compare: { id: "compare", label: "Compare", href: "/compare", icon: GitCompareArrows },
   pitstops: { id: "pitstops", label: "Pit Stops", href: "/pitstops", icon: CircleDot },
-  overtakes: { id: "overtakes", label: "Overtakes", href: "/overtakes", icon: Zap },
-  "speed-traps": { id: "speed-traps", label: "Speed Traps", href: "/speed-traps", icon: Gauge },
   weather: { id: "weather", label: "Weather", href: "/weather", icon: CloudSun },
 };
 
