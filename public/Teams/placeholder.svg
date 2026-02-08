@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200" fill="none" aria-hidden="true">
+  <rect width="400" height="200" fill="hsl(var(--muted))" rx="8"/>
+  <path
+    d="M80 120 L120 80 L200 70 L280 80 L320 120 L300 140 L100 140 Z"
+    stroke="hsl(var(--muted-foreground) / 0.4)"
+    stroke-width="2"
+    fill="hsl(var(--muted-foreground) / 0.1)"
+  />
+  <circle cx="120" cy="135" r="20" stroke="hsl(var(--muted-foreground) / 0.4)" stroke-width="2" fill="none"/>
+  <circle cx="280" cy="135" r="20" stroke="hsl(var(--muted-foreground) / 0.4)" stroke-width="2" fill="none"/>
+  <text
+    x="200"
+    y="105"
+    text-anchor="middle"
+    fill="hsl(var(--muted-foreground) / 0.6)"
+    font-size="14"
+    font-family="system-ui, sans-serif"
+  >
+    Livery coming soon
+  </text>
+</svg>

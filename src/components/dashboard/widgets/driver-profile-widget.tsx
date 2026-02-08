@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { User, Trophy, TrendingUp, ChevronRight } from "lucide-react";
 import { useOpenF1 } from "@/hooks/use-openf1";
 import { useSeason, getDefaultWidgetSeason } from "@/providers/season-provider";
+import { useTeamFilter } from "@/providers/team-filter-provider";
 import { DriverAvatar } from "@/components/shared/driver-avatar";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,6 +23,7 @@ const STORAGE_KEY = "f1-dashboard-favorite-driver";
 
 export function DriverProfileWidget() {
   const { season: globalSeason, availableSeasons } = useSeason();
+  const { selectedTeam: teamFilter } = useTeamFilter();
   const [widgetSeason, setWidgetSeason] = useState(() => getDefaultWidgetSeason(globalSeason));
   const [selectedDriver, setSelectedDriver] = useState<string>("");
   const [mounted, setMounted] = useState(false);
@@ -79,10 +81,30 @@ export function DriverProfileWidget() {
     }
   }, []);
 
-  // Auto-select first driver if none selected
+  const prevTeamFilterRef = useRef<string | null>(null);
+  // When user selects a team in the header filter, default this widget to that team's first driver
   useEffect(() => {
-    if (mounted && !selectedDriver && drivers.length > 0) {
-      // Default to the championship leader
+    if (!teamFilter) {
+      prevTeamFilterRef.current = null;
+      return;
+    }
+    if (!mounted || drivers.length === 0) return;
+    if (prevTeamFilterRef.current === teamFilter) return;
+    prevTeamFilterRef.current = teamFilter;
+    const teamDriverNumbers = drivers
+      .filter((d) => d.team_name === teamFilter)
+      .map((d) => d.driver_number);
+    if (teamDriverNumbers.length === 0) return;
+    const sorted = [...standings].sort((a, b) => a.position_current - b.position_current);
+    const firstFromTeam = sorted.find((s) => teamDriverNumbers.includes(s.driver_number));
+    if (firstFromTeam) {
+      setSelectedDriver(firstFromTeam.driver_number.toString());
+    }
+  }, [mounted, teamFilter, drivers, standings]);
+
+  // Auto-select first driver if none selected (no team filter)
+  useEffect(() => {
+    if (mounted && !selectedDriver && drivers.length > 0 && !teamFilter) {
       const leader = standings.sort((a, b) => a.position_current - b.position_current)[0];
       if (leader) {
         setSelectedDriver(leader.driver_number.toString());
@@ -90,7 +112,7 @@ export function DriverProfileWidget() {
         setSelectedDriver(drivers[0].driver_number.toString());
       }
     }
-  }, [mounted, selectedDriver, drivers, standings]);
+  }, [mounted, selectedDriver, drivers, standings, teamFilter]);
 
   // Save driver selection
   const handleDriverChange = (value: string) => {

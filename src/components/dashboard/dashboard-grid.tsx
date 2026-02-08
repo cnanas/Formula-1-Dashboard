@@ -12,8 +12,6 @@ import {
   Newspaper,
   Calendar,
   Link2,
-  BarChart3,
-  CalendarClock,
   GitCompareArrows,
   TrendingUp,
   CircleDot,
@@ -37,8 +35,6 @@ import { NewsWidget } from "./widgets/news-widget";
 import { CalendarWidget } from "./widgets/calendar-widget";
 import { QuickLinksWidget } from "./widgets/quick-links-widget";
 import { CircuitInfoWidget } from "./widgets/circuit-info-widget";
-import { TeamPerformanceWidget } from "./widgets/team-performance-widget";
-import { SessionScheduleWidget } from "./widgets/session-schedule-widget";
 import { DriverH2HWidget } from "./widgets/driver-h2h-widget";
 import { PointsPerRaceWidget } from "./widgets/points-per-race-widget";
 import { FastestPitstopWidget } from "./widgets/fastest-pitstop-widget";
@@ -67,7 +63,7 @@ const WIDGET_REGISTRY: Record<
   }
 > = {
   "circuit-info": {
-    title: "Schedule",
+    title: "Race Weekend",
     subtitle: "Current Circuit",
     icon: MapPin,
     component: CircuitInfoWidget,
@@ -117,20 +113,6 @@ const WIDGET_REGISTRY: Record<
     icon: Link2,
     component: QuickLinksWidget,
     defaultSize: { w: 4, h: 4 },
-  },
-  "team-performance": {
-    title: "Team Performance",
-    subtitle: "Season Statistics",
-    icon: BarChart3,
-    component: TeamPerformanceWidget,
-    defaultSize: { w: 6, h: 6 },
-  },
-  "session-schedule": {
-    title: "Race Weekend",
-    subtitle: "Session Schedule",
-    icon: CalendarClock,
-    component: SessionScheduleWidget,
-    defaultSize: { w: 4, h: 5 },
   },
   "driver-h2h": {
     title: "Driver Comparison",
@@ -214,7 +196,6 @@ const DEFAULT_WIDGETS = [
   "news",
   "driver-profile",
   "team-profile",
-  "team-performance",
 ];
 
 // Default layout matching the user's preferred arrangement:
@@ -233,7 +214,6 @@ const DEFAULT_LAYOUTS: ResponsiveLayouts = {
     // Right column (x: 8, w: 4)
     { i: "driver-profile", x: 8, y: 0, w: 4, h: 6, minW: 3, minH: 5 },
     { i: "team-profile", x: 8, y: 6, w: 4, h: 6, minW: 3, minH: 5 },
-    { i: "team-performance", x: 8, y: 12, w: 4, h: 6, minW: 3, minH: 5 },
   ],
   md: [
     // Two columns on medium screens
@@ -244,7 +224,6 @@ const DEFAULT_LAYOUTS: ResponsiveLayouts = {
     { i: "news", x: 0, y: 13, w: 5, h: 6, minW: 3, minH: 4 },
     { i: "driver-profile", x: 5, y: 13, w: 5, h: 6, minW: 3, minH: 5 },
     { i: "team-profile", x: 0, y: 19, w: 5, h: 6, minW: 3, minH: 5 },
-    { i: "team-performance", x: 5, y: 19, w: 5, h: 6, minW: 3, minH: 5 },
   ],
   sm: [
     // Single column on small screens
@@ -255,7 +234,6 @@ const DEFAULT_LAYOUTS: ResponsiveLayouts = {
     { i: "driver-h2h", x: 0, y: 26, w: 6, h: 6, minW: 3, minH: 5 },
     { i: "driver-profile", x: 0, y: 32, w: 6, h: 6, minW: 3, minH: 5 },
     { i: "team-profile", x: 0, y: 38, w: 6, h: 6, minW: 3, minH: 5 },
-    { i: "team-performance", x: 0, y: 44, w: 6, h: 6, minW: 3, minH: 5 },
   ],
 };
 

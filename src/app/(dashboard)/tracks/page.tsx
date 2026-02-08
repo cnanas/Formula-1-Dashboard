@@ -1,14 +1,17 @@
 "use client";
 
-import Link from "next/link";
+import { useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { TrackHistoryModal } from "@/components/tracks/track-history-modal";
 import { TRACK_SLUGS, TRACK_DISPLAY_NAMES } from "@/lib/constants/track-layouts";
 import { TrackOutline } from "@/components/shared/track-outline";
 import { usePageTitle } from "@/providers/page-title-provider";
 import { useEffect } from "react";
 
 export default function TracksIndexPage() {
+  const [selectedCircuit, setSelectedCircuit] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
   const { setPageTitle, clearPageTitle } = usePageTitle();
 
   useEffect(() => {
@@ -25,30 +28,50 @@ export default function TracksIndexPage() {
         </p>
       </div>
 
+      <TrackHistoryModal
+        circuitKey={selectedCircuit}
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+      />
+
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {TRACK_SLUGS.map((slug) => (
-          <Link key={slug} href={`/tracks/${slug}`}>
-            <Card className="h-full hover:bg-accent/50 transition-colors">
-              <CardContent className="flex items-center gap-4 py-4">
-                <div className="flex h-14 w-20 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                  <TrackOutline
-                    circuitShortName={TRACK_DISPLAY_NAMES[slug] ?? slug}
-                    className="h-8 w-14"
-                    strokeWidth={2}
-                  />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h2 className="font-semibold truncate">
-                    {TRACK_DISPLAY_NAMES[slug] ?? slug}
-                  </h2>
-                  <p className="text-xs text-muted-foreground">
-                    View stats & past winners
-                  </p>
-                </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
-              </CardContent>
-            </Card>
-          </Link>
+          <Card
+            key={slug}
+            role="button"
+            tabIndex={0}
+            className="h-full cursor-pointer transition-colors hover:bg-accent/50"
+            onClick={() => {
+              setSelectedCircuit(slug);
+              setModalOpen(true);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setSelectedCircuit(slug);
+                setModalOpen(true);
+              }
+            }}
+          >
+            <CardContent className="flex items-center gap-4 py-4">
+              <div className="flex h-14 w-20 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                <TrackOutline
+                  circuitShortName={TRACK_DISPLAY_NAMES[slug] ?? slug}
+                  className="h-8 w-14"
+                  strokeWidth={2}
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h2 className="font-semibold truncate">
+                  {TRACK_DISPLAY_NAMES[slug] ?? slug}
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  View stats & past winners
+                </p>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+            </CardContent>
+          </Card>
         ))}
       </div>
     </div>

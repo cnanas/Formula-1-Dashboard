@@ -20,12 +20,16 @@ interface LapTimeChartProps {
   laps: Lap[];
   drivers: Driver[];
   selectedDrivers?: number[];
+  height?: number;
+  compact?: boolean;
 }
 
 export function LapTimeChart({
   laps,
   drivers,
   selectedDrivers,
+  height = 400,
+  compact,
 }: LapTimeChartProps) {
   const driverMap = new Map(drivers.map((d) => [d.driver_number, d]));
 
@@ -61,12 +65,14 @@ export function LapTimeChart({
   });
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Lap Times</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <ResponsiveContainer width="100%" height={400}>
+    <Card className={compact ? "py-3" : undefined}>
+      {!compact && (
+        <CardHeader>
+          <CardTitle className="text-base">Lap Times</CardTitle>
+        </CardHeader>
+      )}
+      <CardContent className={compact ? "pt-0 px-4 pb-4" : undefined}>
+        <ResponsiveContainer width="100%" height={height}>
           <LineChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
             <XAxis

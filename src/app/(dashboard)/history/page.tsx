@@ -6,6 +6,12 @@ import { format } from "date-fns";
 import { ChevronRight, History } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -106,50 +112,59 @@ export default function HistoryPage() {
         </div>
       )}
 
-      {/* Sessions list */}
-      {selectedMeeting && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Sessions</CardTitle>
-          </CardHeader>
-          <CardContent>
+      {/* Sessions modal */}
+      <Dialog
+        open={!!selectedMeeting}
+        onOpenChange={(open) => !open && setSelectedMeeting("")}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {meetings.find(
+                (m) => m.meeting_key.toString() === selectedMeeting
+              )?.meeting_name ?? "Sessions"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
             {sessionsLoading ? (
-              <p className="text-sm text-muted-foreground">Loading sessions...</p>
+              <p className="text-sm text-muted-foreground">
+                Loading sessions...
+              </p>
             ) : sessions.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No sessions found.</p>
+              <p className="text-sm text-muted-foreground">
+                No sessions found.
+              </p>
             ) : (
-              <div className="space-y-2">
-                {sessions.map((session) => (
-                  <Link
-                    key={session.session_key}
-                    href={`/race/${selectedMeeting}/${session.session_key}`}
-                  >
-                    <div className="flex items-center justify-between rounded-lg border border-border p-3 hover:bg-accent transition-colors">
-                      <div>
-                        <p className="font-medium text-sm">
-                          {session.session_name}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {format(
-                            new Date(session.date_start),
-                            "MMM d, yyyy HH:mm"
-                          )}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-xs">
-                          {session.session_type}
-                        </Badge>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                      </div>
+              sessions.map((session) => (
+                <Link
+                  key={session.session_key}
+                  href={`/race/${selectedMeeting}/${session.session_key}`}
+                >
+                  <div className="flex items-center justify-between rounded-lg border border-border p-3 hover:bg-accent transition-colors">
+                    <div>
+                      <p className="font-medium text-sm">
+                        {session.session_name}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {format(
+                          new Date(session.date_start),
+                          "MMM d, yyyy HH:mm"
+                        )}
+                      </p>
                     </div>
-                  </Link>
-                ))}
-              </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-xs">
+                        {session.session_type}
+                      </Badge>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                  </div>
+                </Link>
+              ))
             )}
-          </CardContent>
-        </Card>
-      )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

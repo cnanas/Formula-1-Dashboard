@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useOpenF1 } from "@/hooks/use-openf1";
 import { useSeason, getDefaultWidgetSeason } from "@/providers/season-provider";
+import { useTeamFilter } from "@/providers/team-filter-provider";
 import {
   Select,
   SelectContent,
@@ -63,6 +64,7 @@ function PerformanceBubble({
 
 export function TeamPerformanceWidget() {
   const { season: globalSeason, availableSeasons } = useSeason();
+  const { selectedTeam: teamFilter } = useTeamFilter();
   const [widgetSeason, setWidgetSeason] = useState(() => getDefaultWidgetSeason(globalSeason));
   const [selectedTeam, setSelectedTeam] = useState<string>("");
   const prevGlobalSeasonRef = useRef<number | null>(null);
@@ -118,6 +120,13 @@ export function TeamPerformanceWidget() {
       return (aStanding?.position_current ?? 99) - (bStanding?.position_current ?? 99);
     });
   const currentTeam = selectedTeam || teams[0] || "";
+
+  // Sync to team filter when set
+  useEffect(() => {
+    if (teamFilter && teams.includes(teamFilter)) {
+      setSelectedTeam(teamFilter);
+    }
+  }, [teamFilter, teams]);
 
   // Get team color
   const teamDriver = drivers.find((d) => d.team_name === currentTeam);

@@ -19,12 +19,16 @@ interface GapEvolutionChartProps {
   intervals: Interval[];
   drivers: Driver[];
   selectedDrivers?: number[];
+  height?: number;
+  compact?: boolean;
 }
 
 export function GapEvolutionChart({
   intervals,
   drivers,
   selectedDrivers,
+  height = 350,
+  compact,
 }: GapEvolutionChartProps) {
   const driverMap = new Map(drivers.map((d) => [d.driver_number, d]));
   const driverNumbers = selectedDrivers ?? [...new Set(intervals.map((i) => i.driver_number))].slice(0, 5);
@@ -71,12 +75,14 @@ export function GapEvolutionChart({
   });
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Gap to Leader</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <ResponsiveContainer width="100%" height={350}>
+    <Card className={compact ? "py-3" : undefined}>
+      {!compact && (
+        <CardHeader>
+          <CardTitle className="text-base">Gap to Leader</CardTitle>
+        </CardHeader>
+      )}
+      <CardContent className={compact ? "pt-0 px-4 pb-4" : undefined}>
+        <ResponsiveContainer width="100%" height={height}>
           <LineChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
             <XAxis

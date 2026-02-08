@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Calendar } from "lucide-react";
 import { useOpenF1 } from "@/hooks/use-openf1";
 import { useSeason, getDefaultWidgetSeason } from "@/providers/season-provider";
+import { useTeamFilter } from "@/providers/team-filter-provider";
 import { DriverAvatar } from "@/components/shared/driver-avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
@@ -34,6 +35,7 @@ function getPositionBadgeStyle(position: number) {
 
 export function StandingsWidget() {
   const { season: globalSeason, availableSeasons } = useSeason();
+  const { selectedTeam: teamFilter } = useTeamFilter();
   const [widgetSeason, setWidgetSeason] = useState(() => getDefaultWidgetSeason(globalSeason));
   const prevGlobalSeasonRef = useRef<number | null>(null);
 
@@ -78,9 +80,16 @@ export function StandingsWidget() {
     driverInfo.map((d) => [d.driver_number, d])
   );
 
-  const top = [...standings]
-    .sort((a, b) => a.position_current - b.position_current)
-    .slice(0, 10);
+  const top = useMemo(() => {
+    const sorted = [...standings].sort((a, b) => a.position_current - b.position_current);
+    return sorted.slice(0, 10);
+  }, [standings]);
+
+  const isDriverFromSelectedTeam = useMemo(() => {
+    if (!teamFilter) return () => false;
+    return (driverNumber: number) =>
+      driverMap.get(driverNumber)?.team_name === teamFilter;
+  }, [teamFilter, driverMap]);
 
   return (
     <div className="space-y-3">
@@ -128,14 +137,19 @@ export function StandingsWidget() {
         <div className="space-y-1">
           {top.map((s, index) => {
             const driver = driverMap.get(s.driver_number);
-            
+            const isHighlighted = isDriverFromSelectedTeam(s.driver_number);
             return (
               <motion.div
                 key={s.driver_number}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.3, delay: index * 0.05 }}
-                className="flex items-center gap-3 py-2 px-2 rounded-xl hover:bg-muted/50 transition-colors group"
+                className={cn(
+                  "flex items-center gap-3 py-2 px-2 rounded-xl transition-colors group",
+                  isHighlighted
+                    ? "bg-primary/10 ring-2 ring-primary/30 hover:bg-primary/15"
+                    : "hover:bg-muted/50"
+                )}
               >
                 {/* Position badge */}
                 <motion.div

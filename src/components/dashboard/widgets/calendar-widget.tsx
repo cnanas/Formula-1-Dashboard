@@ -6,6 +6,8 @@ import { MapPin, CheckCircle2 } from "lucide-react";
 import { useOpenF1 } from "@/hooks/use-openf1";
 import { useSeason } from "@/providers/season-provider";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ScheduleMiniMap } from "@/components/calendar/schedule-mini-map";
+import { getCircuitCoordinates } from "@/lib/constants/circuit-coordinates";
 
 export function CalendarWidget() {
   const { season } = useSeason();
@@ -93,8 +95,20 @@ export function CalendarWidget() {
     );
   }
 
+  const nextRace = upcoming[0];
+  const nextCoords = nextRace
+    ? getCircuitCoordinates(nextRace.circuit_short_name)
+    : null;
+
   return (
-    <div className="space-y-1">
+    <div className="space-y-2">
+      {nextCoords && (
+        <ScheduleMiniMap
+          longitude={nextCoords[0]}
+          latitude={nextCoords[1]}
+          className="w-full h-[120px] object-cover rounded-xl"
+        />
+      )}
       {upcoming.map((meeting) => {
         const startDate = new Date(meeting.date_start);
         const isActive = isPast(startDate) && !isPast(new Date(meeting.date_end));

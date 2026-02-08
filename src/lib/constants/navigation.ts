@@ -3,6 +3,7 @@ import {
   Radio,
   Calendar,
   Trophy,
+  Users,
   Newspaper,
   BarChart3,
   GitCompareArrows,
@@ -10,7 +11,6 @@ import {
   Gauge,
   Zap,
   CloudSun,
-  History,
   MapPin,
 } from "lucide-react";
 import type { NavSection } from "@/types/app";
@@ -22,6 +22,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: "Live Session", href: "/live", icon: Radio },
       { label: "Calendar", href: "/calendar", icon: Calendar },
       { label: "Track History", href: "/tracks", icon: MapPin },
+      { label: "Teams", href: "/teams", icon: Users },
       { label: "Standings", href: "/standings", icon: Trophy },
       { label: "News", href: "/news", icon: Newspaper },
     ],
@@ -34,7 +35,6 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: "Overtakes", href: "/overtakes", icon: Zap },
       { label: "Speed Traps", href: "/speed-traps", icon: Gauge },
       { label: "Weather", href: "/weather", icon: CloudSun },
-      { label: "History", href: "/history", icon: History },
     ],
   },
 ];

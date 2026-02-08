@@ -19,12 +19,16 @@ interface PositionChartProps {
   positions: Position[];
   drivers: Driver[];
   selectedDrivers?: number[];
+  height?: number;
+  compact?: boolean;
 }
 
 export function PositionChart({
   positions,
   drivers,
   selectedDrivers,
+  height = 400,
+  compact,
 }: PositionChartProps) {
   const driverMap = new Map(drivers.map((d) => [d.driver_number, d]));
   const driverNumbers = selectedDrivers ?? [...new Set(positions.map((p) => p.driver_number))];
@@ -69,12 +73,14 @@ export function PositionChart({
   });
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Position Changes</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <ResponsiveContainer width="100%" height={400}>
+    <Card className={compact ? "py-3" : undefined}>
+      {!compact && (
+        <CardHeader>
+          <CardTitle className="text-base">Position Changes</CardTitle>
+        </CardHeader>
+      )}
+      <CardContent className={compact ? "pt-0 px-4 pb-4" : undefined}>
+        <ResponsiveContainer width="100%" height={height}>
           <LineChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
             <XAxis

@@ -295,6 +295,11 @@ export const TEAM_COLORS: Record<string, { primary: string; secondary: string; a
     secondary: "#1e3a5f",
     accent: "#ffffff",
   },
+  "Racing Bull": {
+    primary: "#6692ff",
+    secondary: "#1e3a5f",
+    accent: "#ffffff",
+  },
   "Kick Sauber": {
     primary: "#52e252",
     secondary: "#000000",

@@ -101,10 +101,10 @@ export default function TeamProfilePage({
   if (teamDrivers.length === 0) {
     return (
       <div className="space-y-6">
-        <Link href="/standings">
+        <Link href="/teams">
           <Button variant="ghost" size="sm">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Standings
+            Back to Teams
           </Button>
         </Link>
         <EmptyState
@@ -121,10 +121,10 @@ export default function TeamProfilePage({
   return (
     <div className="space-y-6">
       {/* Back button */}
-      <Link href="/standings">
+      <Link href="/teams">
         <Button variant="ghost" size="sm">
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Standings
+          Back to Teams
         </Button>
       </Link>
 

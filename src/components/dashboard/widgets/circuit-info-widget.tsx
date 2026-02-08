@@ -17,6 +17,8 @@ import { useSeason } from "@/providers/season-provider";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { TrackOutline } from "@/components/shared/track-outline";
+import { ScheduleMiniMap } from "@/components/calendar/schedule-mini-map";
+import { getCircuitCoordinates } from "@/lib/constants/circuit-coordinates";
 
 function WeatherIcon({ condition }: { condition?: string }) {
   const iconClass = "h-6 w-6";
@@ -141,21 +143,49 @@ export function CircuitInfoWidget() {
         </span>
       </div>
 
-      {/* Track Visualization */}
-      <div className="relative bg-gradient-to-br from-muted/50 to-muted rounded-xl p-6 min-h-[140px] flex items-center justify-center">
-        <div className="absolute right-4 top-1/2 -translate-y-1/2 w-28 h-28 text-foreground/15">
-          <TrackOutline
-            circuitShortName={currentMeeting.circuit_short_name}
-            strokeWidth={3}
-          />
-        </div>
-        <div className="relative text-center">
-          <p className="text-2xl font-bold">{currentMeeting.meeting_name}</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            Round {meetings.indexOf(currentMeeting) + 1} of {meetings.length}
-          </p>
-        </div>
-      </div>
+      {/* Mini Map + Track Visualization */}
+      {(() => {
+        const coords = getCircuitCoordinates(currentMeeting.circuit_short_name);
+        return coords ? (
+          <div className="relative rounded-xl overflow-hidden min-h-[140px]">
+            <ScheduleMiniMap
+              longitude={coords[0]}
+              latitude={coords[1]}
+              className="w-full h-[140px] object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
+            <div className="absolute bottom-0 inset-x-0 p-4 flex items-end justify-between">
+              <div>
+                <p className="text-lg font-bold">{currentMeeting.meeting_name}</p>
+                <p className="text-xs text-muted-foreground">
+                  Round {meetings.indexOf(currentMeeting) + 1} of {meetings.length}
+                </p>
+              </div>
+              <div className="w-16 h-16 text-foreground/30">
+                <TrackOutline
+                  circuitShortName={currentMeeting.circuit_short_name}
+                  strokeWidth={3}
+                />
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="relative bg-gradient-to-br from-muted/50 to-muted rounded-xl p-6 min-h-[140px] flex items-center justify-center">
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 w-28 h-28 text-foreground/15">
+              <TrackOutline
+                circuitShortName={currentMeeting.circuit_short_name}
+                strokeWidth={3}
+              />
+            </div>
+            <div className="relative text-center">
+              <p className="text-2xl font-bold">{currentMeeting.meeting_name}</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Round {meetings.indexOf(currentMeeting) + 1} of {meetings.length}
+              </p>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Weather & Stats Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">

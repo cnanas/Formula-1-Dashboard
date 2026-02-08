@@ -23,30 +23,30 @@ export function DynamicBackground({ className }: DynamicBackgroundProps) {
 
   return (
     <div className={`fixed inset-0 -z-10 overflow-hidden pointer-events-none ${className}`}>
-      {/* Base gradient layer - Static, no animation needed */}
+      {/* Base gradient layer - more prominent theme colors */}
       <div
         className="absolute inset-0 transition-all duration-1000"
         style={{
           background: `linear-gradient(${theme.gradientAngle}deg,
-            ${theme.primaryColor}35 0%,
-            ${theme.secondaryColor}20 50%,
+            ${theme.primaryColor}55 0%,
+            ${theme.secondaryColor}40 50%,
             transparent 100%)`,
         }}
       />
 
-      {/* Optimized orbs using CSS animations instead of JS */}
+      {/* Optimized orbs - more prominent theme colors */}
       {/* Orb 1 - Primary color */}
       <div
         className="dynamic-bg-orb absolute will-change-transform"
         style={{
-          width: "min(50vw, 500px)",
-          height: "min(50vw, 500px)",
+          width: "min(55vw, 550px)",
+          height: "min(55vw, 550px)",
           left: "-10%",
           top: "-10%",
-          background: `radial-gradient(circle, ${theme.primaryColor}40 0%, transparent 60%)`,
-          filter: "blur(40px)",
+          background: `radial-gradient(circle, ${theme.primaryColor}65 0%, transparent 60%)`,
+          filter: "blur(50px)",
           animation: prefersReducedMotion ? "none" : "float1 30s ease-in-out infinite",
-          transform: "translate3d(0, 0, 0)", // Force GPU layer
+          transform: "translate3d(0, 0, 0)",
         }}
       />
 
@@ -54,39 +54,39 @@ export function DynamicBackground({ className }: DynamicBackgroundProps) {
       <div
         className="dynamic-bg-orb absolute will-change-transform"
         style={{
-          width: "min(45vw, 450px)",
-          height: "min(45vw, 450px)",
+          width: "min(50vw, 500px)",
+          height: "min(50vw, 500px)",
           right: "-10%",
           bottom: "-10%",
-          background: `radial-gradient(circle, ${theme.secondaryColor}35 0%, transparent 60%)`,
-          filter: "blur(40px)",
+          background: `radial-gradient(circle, ${theme.secondaryColor}55 0%, transparent 60%)`,
+          filter: "blur(50px)",
           animation: prefersReducedMotion ? "none" : "float2 35s ease-in-out infinite",
           transform: "translate3d(0, 0, 0)",
         }}
       />
 
-      {/* Orb 3 - Accent color (smaller, subtler) */}
+      {/* Orb 3 - Accent color */}
       <div
         className="dynamic-bg-orb absolute will-change-transform"
         style={{
-          width: "min(25vw, 250px)",
-          height: "min(25vw, 250px)",
+          width: "min(30vw, 300px)",
+          height: "min(30vw, 300px)",
           left: "40%",
           top: "30%",
-          background: `radial-gradient(circle, ${theme.accentColor}20 0%, transparent 60%)`,
-          filter: "blur(30px)",
+          background: `radial-gradient(circle, ${theme.accentColor}45 0%, transparent 60%)`,
+          filter: "blur(40px)",
           animation: prefersReducedMotion ? "none" : "float3 40s ease-in-out infinite",
           transform: "translate3d(0, 0, 0)",
         }}
       />
 
-      {/* Grid pattern - simplified */}
+      {/* Grid pattern - more visible */}
       <div
-        className="dynamic-bg-grid absolute inset-0 opacity-[0.02] dark:opacity-[0.04]"
+        className="dynamic-bg-grid absolute inset-0 opacity-[0.05] dark:opacity-[0.08]"
         style={{
           backgroundImage: `
-            linear-gradient(${theme.primaryColor}50 1px, transparent 1px),
-            linear-gradient(90deg, ${theme.primaryColor}50 1px, transparent 1px)
+            linear-gradient(${theme.primaryColor}70 1px, transparent 1px),
+            linear-gradient(90deg, ${theme.primaryColor}70 1px, transparent 1px)
           `,
           backgroundSize: "60px 60px",
         }}
@@ -177,10 +177,10 @@ export function GlassCard({
         WebkitBackdropFilter: `blur(${style.blur})`,
         border: `1px solid ${style.border}`,
         boxShadow: `
-          0 0 0 1px ${theme.primaryColor}05,
+          0 0 0 1px ${theme.primaryColor}15,
           0 4px 6px -1px rgba(0, 0, 0, 0.1),
           0 2px 4px -1px rgba(0, 0, 0, 0.06),
-          inset 0 1px 0 ${theme.accentColor}05
+          inset 0 1px 0 ${theme.accentColor}15
         `,
       }}
     >
@@ -188,7 +188,7 @@ export function GlassCard({
       <div
         className="absolute top-0 left-0 right-0 h-px"
         style={{
-          background: `linear-gradient(90deg, transparent, ${theme.primaryColor}30, transparent)`,
+          background: `linear-gradient(90deg, transparent, ${theme.primaryColor}50, transparent)`,
         }}
       />
       {children}

@@ -16,7 +16,6 @@ import {
   Gauge,
   Zap,
   CloudSun,
-  History,
   MapPin,
   MoreHorizontal,
   X,
@@ -42,7 +41,6 @@ const SECONDARY_NAV = [
   { label: "Overtakes", href: "/overtakes", icon: Zap },
   { label: "Speed Traps", href: "/speed-traps", icon: Gauge },
   { label: "Weather", href: "/weather", icon: CloudSun },
-  { label: "History", href: "/history", icon: History },
 ];
 
 export function BottomNav() {
@@ -95,7 +93,7 @@ export function BottomNav() {
             <div
               className="rounded-2xl border border-border/50 bg-card/95 backdrop-blur-xl p-4 shadow-2xl"
               style={{
-                boxShadow: `0 -10px 40px -10px ${theme.primaryColor}20`,
+                boxShadow: `0 -10px 50px -10px ${theme.primaryColor}50, 0 0 0 1px ${theme.primaryColor}20`,
               }}
             >
               <div className="flex items-center justify-between mb-4">
@@ -141,7 +139,7 @@ export function BottomNav() {
           layout
           className="flex items-center gap-1 px-2 py-2 rounded-full border border-border/50 bg-card/95 backdrop-blur-xl shadow-2xl"
           style={{
-            boxShadow: `0 10px 40px -10px ${theme.primaryColor}30, 0 4px 20px -5px rgba(0,0,0,0.3)`,
+            boxShadow: `0 10px 50px -10px ${theme.primaryColor}50, 0 0 0 1px ${theme.primaryColor}25, 0 4px 20px -5px rgba(0,0,0,0.3)`,
           }}
         >
           {PRIMARY_NAV.map((item) => {
@@ -243,7 +241,7 @@ export function DesktopBottomNav() {
         layout
         className="flex items-center gap-1 px-3 py-2 rounded-2xl border border-border/50 bg-card/90 backdrop-blur-xl"
         style={{
-          boxShadow: `0 10px 50px -10px ${theme.primaryColor}40, 0 4px 25px -5px rgba(0,0,0,0.4)`,
+          boxShadow: `0 10px 55px -10px ${theme.primaryColor}55, 0 0 0 1px ${theme.primaryColor}25, 0 4px 25px -5px rgba(0,0,0,0.4)`,
         }}
         animate={{
           scale: isHovered ? 1.02 : 1,

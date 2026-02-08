@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useOpenF1 } from "@/hooks/use-openf1";
 import { useSeason } from "@/providers/season-provider";
 import { DriverAvatar } from "@/components/shared/driver-avatar";
@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { Trophy, Flag, Zap, Target } from "lucide-react";
+import { Trophy, Flag, Zap, Target, GitCompareArrows } from "lucide-react";
 
 interface ComparisonBarProps {
   label: string;
@@ -68,21 +68,58 @@ function ComparisonBar({ label, value1, value2, color1, color2, icon }: Comparis
 }
 
 export function DriverH2HWidget() {
-  const { season } = useSeason();
+  const { season, availableSeasons } = useSeason();
   const [driver1Number, setDriver1Number] = useState<string>("");
   const [driver2Number, setDriver2Number] = useState<string>("");
 
-  // Get sessions for selected season
+  // Get sessions for selected season (all session types so we can fallback)
   const { data: sessions, isLoading: sessionsLoading } = useOpenF1("sessions", {
     year: season,
   });
 
-  // Get the latest race session
-  const latestRaceSession = sessions
-    .filter((s) => s.session_type === "Race" && new Date(s.date_start) < new Date())
-    .sort((a, b) => new Date(b.date_start).getTime() - new Date(a.date_start).getTime())[0];
+  // Latest completed race session (case-insensitive session_type)
+  const latestRaceSession = useMemo(() => {
+    return sessions
+      ?.filter(
+        (s) =>
+          s.session_type?.toLowerCase() === "race" &&
+          new Date(s.date_start) < new Date()
+      )
+      .sort((a, b) => new Date(b.date_start).getTime() - new Date(a.date_start).getTime())[0];
+  }, [sessions]);
 
-  const sessionKey = latestRaceSession?.session_key?.toString();
+  // Fallback: most recent completed session of any type (e.g. FP1/Quali before first race)
+  const fallbackSession = useMemo(() => {
+    if (latestRaceSession) return undefined;
+    return sessions
+      ?.filter((s) => new Date(s.date_start) < new Date())
+      .sort((a, b) => new Date(b.date_start).getTime() - new Date(a.date_start).getTime())[0];
+  }, [sessions, latestRaceSession]);
+
+  // Fallback 2: previous season's latest race when current season has no sessions yet
+  const fallbackSeason = useMemo(() => {
+    if (latestRaceSession || fallbackSession) return null;
+    return availableSeasons.find((y) => y < season) ?? null;
+  }, [latestRaceSession, fallbackSession, season, availableSeasons]);
+
+  const { data: fallbackSessions } = useOpenF1(
+    "sessions",
+    { year: fallbackSeason ?? 0, session_type: "Race" },
+    { enabled: !!fallbackSeason }
+  );
+
+  const previousSeasonSession = useMemo(() => {
+    if (!fallbackSeason || !fallbackSessions?.length) return undefined;
+    return fallbackSessions
+      .filter((s) => new Date(s.date_start) < new Date())
+      .sort((a, b) => new Date(b.date_start).getTime() - new Date(a.date_start).getTime())[0];
+  }, [fallbackSeason, fallbackSessions]);
+
+  const sessionKey = (
+    latestRaceSession ??
+    fallbackSession ??
+    previousSeasonSession
+  )?.session_key?.toString();
 
   // Get drivers
   const { data: drivers, isLoading: driversLoading } = useOpenF1(
@@ -100,12 +137,14 @@ export function DriverH2HWidget() {
 
   const isLoading = sessionsLoading || driversLoading || standingsLoading;
 
-  // Sort drivers by championship position for default selection
-  const sortedDrivers = [...drivers].sort((a, b) => {
-    const aStanding = standings.find((s) => s.driver_number === a.driver_number);
-    const bStanding = standings.find((s) => s.driver_number === b.driver_number);
-    return (aStanding?.position_current ?? 99) - (bStanding?.position_current ?? 99);
-  });
+  // Sort drivers by championship position for default selection (safe when standings empty)
+  const sortedDrivers = useMemo(() => {
+    return [...(drivers ?? [])].sort((a, b) => {
+      const aStanding = standings?.find((s) => s.driver_number === a.driver_number);
+      const bStanding = standings?.find((s) => s.driver_number === b.driver_number);
+      return (aStanding?.position_current ?? 99) - (bStanding?.position_current ?? 99);
+    });
+  }, [drivers, standings]);
 
   // Set default drivers if not selected - default to top 2 in championship
   const d1Num = driver1Number || sortedDrivers[0]?.driver_number?.toString() || "";
@@ -151,6 +190,21 @@ export function DriverH2HWidget() {
             <Skeleton key={i} className="h-8 w-full" />
           ))}
         </div>
+      </div>
+    );
+  }
+
+  // No session or no drivers (e.g. future season, or API returned empty)
+  if (!sessionKey || !drivers?.length) {
+    return (
+      <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
+        <GitCompareArrows className="h-12 w-12 text-muted-foreground/50 mb-3" />
+        <p className="text-sm font-medium text-foreground">No comparison data yet</p>
+        <p className="text-xs text-muted-foreground mt-1">
+          {!sessionKey
+            ? `No session data for ${season}. Try after the first session or switch season.`
+            : "No driver data available for this session."}
+        </p>
       </div>
     );
   }

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { usePathname } from "next/navigation";
-import { Radio, Menu, Pencil, Check, Calendar, ChevronDown } from "lucide-react";
+import { Radio, Menu, Pencil, Check, Calendar, ChevronDown, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSessionStatus } from "@/hooks/use-session-status";
 import { Badge } from "@/components/ui/badge";
@@ -18,11 +18,23 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { MobileNav } from "./mobile-nav";
 import { ThemeSelector } from "./theme-selector";
 import { usePageTitle } from "@/providers/page-title-provider";
 import { useDashboardEdit } from "@/providers/dashboard-edit-provider";
 import { useSeason } from "@/providers/season-provider";
+import { useTeamFilter } from "@/providers/team-filter-provider";
+import { useCircuitTheme } from "@/providers/circuit-theme-provider";
+import Image from "next/image";
+import { useOpenF1 } from "@/hooks/use-openf1";
+import { getTeamLogoUrl } from "@/lib/constants/team-logos";
 
 const PAGE_TITLES: Record<string, string> = {
   "/": "Dashboard",
@@ -30,6 +42,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/live/map": "Track Map",
   "/calendar": "Calendar",
   "/tracks": "Track History",
+  "/teams": "Teams",
   "/standings": "Standings",
   "/news": "News",
   "/compare": "Head to Head",
@@ -46,6 +59,7 @@ function getStaticPageTitle(pathname: string): string {
   if (pathname.includes("/race/")) return "Race Analysis";
   if (pathname.includes("/results/")) return "Results";
   if (pathname.startsWith("/tracks/")) return "Track History";
+  if (pathname.startsWith("/teams/") && pathname !== "/teams") return "Teams";
   return "Dashboard";
 }
 
@@ -56,24 +70,79 @@ export function Topbar() {
   const { dynamicTitle, subtitle } = usePageTitle();
   const { isEditing, toggleEditing, showEditButton } = useDashboardEdit();
   const { season, setSeason, availableSeasons } = useSeason();
+  const { selectedTeam, setSelectedTeam } = useTeamFilter();
+  const { theme, themeMode, setTeamTheme, resetToDefault } = useCircuitTheme();
   const recentSeasons = [2026, 2025];
   const olderSeasons = availableSeasons.filter((y) => y < 2025);
+
+  const { data: raceSessions } = useOpenF1("sessions", {
+    year: season,
+    session_type: "Race",
+  });
+  const latestRaceSession = useMemo(() => {
+    const completed = raceSessions.filter((s) => new Date(s.date_start) < new Date());
+    if (completed.length > 0) {
+      return completed.sort((a, b) => new Date(b.date_start).getTime() - new Date(a.date_start).getTime())[0];
+    }
+    return undefined;
+  }, [raceSessions]);
+
+  // If selected season has no completed races (e.g. 2026 pre-season), fall back to previous season for teams
+  const fallbackSeason = useMemo(() => {
+    if (latestRaceSession) return null;
+    const prev = availableSeasons.find((y) => y < season);
+    return prev ?? null;
+  }, [latestRaceSession, season, availableSeasons]);
+
+  const { data: fallbackSessions } = useOpenF1(
+    "sessions",
+    { year: fallbackSeason ?? 0, session_type: "Race" },
+    { enabled: !!fallbackSeason }
+  );
+  const fallbackSession = useMemo(() => {
+    if (!fallbackSeason || !fallbackSessions?.length) return undefined;
+    const completed = fallbackSessions.filter((s) => new Date(s.date_start) < new Date());
+    return completed.sort((a, b) => new Date(b.date_start).getTime() - new Date(a.date_start).getTime())[0];
+  }, [fallbackSeason, fallbackSessions]);
+
+  const sessionKey = (latestRaceSession ?? fallbackSession)?.session_key?.toString();
+
+  const { data: drivers } = useOpenF1("drivers", { session_key: sessionKey }, { enabled: !!sessionKey });
+
+  const teams = useMemo(() => {
+    const names = [...new Set(drivers.map((d) => d.team_name).filter(Boolean))];
+    return names.sort((a, b) => a.localeCompare(b));
+  }, [drivers]);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Use dynamic title if set, otherwise fall back to static title
+  // Sync theme when team filter is set (including when restored from localStorage)
+  useEffect(() => {
+    if (selectedTeam) {
+      setTeamTheme(selectedTeam);
+    }
+    // "All teams" -> reset is handled in onValueChange only (avoids reset on initial null before hydration)
+  }, [selectedTeam]);
+
   const pageTitle = dynamicTitle ?? getStaticPageTitle(pathname);
+  const teamLogoUrl = selectedTeam ? getTeamLogoUrl(selectedTeam) : null;
+  const [logoError, setLogoError] = useState(false);
+  useEffect(() => {
+    setLogoError(false);
+  }, [selectedTeam]);
 
   return (
     <header className="sticky top-0 z-30 overflow-hidden">
-      {/* Thin accent stripe at top */}
+      {/* Thin accent stripe - uses theme color when team/circuit theme is active */}
       <div
-        className="h-0.5 w-full shrink-0"
+        className="h-0.5 w-full shrink-0 transition-colors duration-500"
         style={{
           background:
-            "linear-gradient(90deg, var(--primary) 0%, color-mix(in oklch, var(--primary) 70%, transparent) 100%)",
+            themeMode !== "default"
+              ? `linear-gradient(90deg, ${theme.primaryColor} 0%, ${theme.primaryColor}dd 50%, color-mix(in oklch, ${theme.primaryColor} 70%, transparent) 100%)`
+              : "linear-gradient(90deg, var(--primary) 0%, color-mix(in oklch, var(--primary) 70%, transparent) 100%)",
         }}
       />
       <div className="flex h-16 items-center justify-between border-b border-border/60 bg-background/90 px-4 shadow-sm backdrop-blur-md sm:px-6">
@@ -107,15 +176,36 @@ export function Topbar() {
             </Button>
           )}
 
-          <div className="flex min-w-0 flex-col gap-0.5">
-            <h1 className="truncate text-xl font-semibold tracking-tight text-foreground">
-              {pageTitle}
-            </h1>
-            {subtitle && (
-              <span className="truncate text-xs text-muted-foreground">
-                {subtitle}
-              </span>
+          <div className="flex min-w-0 items-center gap-3">
+            {selectedTeam && (
+              <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted">
+                {teamLogoUrl && !logoError ? (
+                  <Image
+                    src={teamLogoUrl}
+                    alt={selectedTeam}
+                    width={36}
+                    height={36}
+                    className="object-contain p-1"
+                    unoptimized
+                    onError={() => setLogoError(true)}
+                  />
+                ) : (
+                  <span className="text-xs font-bold text-muted-foreground">
+                    {selectedTeam.slice(0, 2).toUpperCase()}
+                  </span>
+                )}
+              </div>
             )}
+            <div className="flex min-w-0 flex-col gap-0.5">
+              <h1 className="truncate text-xl font-semibold tracking-tight text-foreground">
+                {selectedTeam ? `${selectedTeam} · ${pageTitle}` : pageTitle}
+              </h1>
+              {subtitle && (
+                <span className="truncate text-xs text-muted-foreground">
+                  {subtitle}
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Live session indicator */}
@@ -180,6 +270,35 @@ export function Topbar() {
             </div>
           )}
 
+          {/* Team filter */}
+          {mounted && (
+            <Select
+              value={selectedTeam ?? "all"}
+              onValueChange={(v) => {
+                const team = v === "all" ? null : v;
+                setSelectedTeam(team);
+                if (team) {
+                  setTeamTheme(team);
+                } else {
+                  resetToDefault();
+                }
+              }}
+            >
+              <SelectTrigger className="h-8 w-[140px] gap-1.5 rounded-lg border-border/50 bg-muted/30 text-sm font-medium">
+                <Users className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <SelectValue placeholder="Team" />
+              </SelectTrigger>
+              <SelectContent align="end">
+                <SelectItem value="all">All teams</SelectItem>
+                {teams.map((team) => (
+                  <SelectItem key={team} value={team}>
+                    {team}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+
           {/* Divider before actions */}
           <div className="h-6 w-px bg-border/60" aria-hidden />
 
@@ -209,6 +328,7 @@ export function Topbar() {
           </div>
         </div>
       </div>
+
     </header>
   );
 }

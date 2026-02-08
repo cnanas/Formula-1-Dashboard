@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Users, Trophy, TrendingUp, ChevronRight } from "lucide-react";
 import { useOpenF1 } from "@/hooks/use-openf1";
 import { useSeason, getDefaultWidgetSeason } from "@/providers/season-provider";
+import { useTeamFilter } from "@/providers/team-filter-provider";
 import { DriverAvatar } from "@/components/shared/driver-avatar";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -17,11 +19,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { getTeamColor } from "@/lib/utils/colors";
+import { getTeamLogoUrl } from "@/lib/constants/team-logos";
+import { getTeamLiveryUrl } from "@/lib/constants/team-liveries";
+import { getTeamCarModel } from "@/lib/constants/team-car-models";
 
 const STORAGE_KEY = "f1-dashboard-favorite-team";
 
 export function TeamProfileWidget() {
   const { season: globalSeason, availableSeasons } = useSeason();
+  const { selectedTeam: teamFilter } = useTeamFilter();
   const [widgetSeason, setWidgetSeason] = useState(() => getDefaultWidgetSeason(globalSeason));
   const [selectedTeam, setSelectedTeam] = useState<string>("");
   const [mounted, setMounted] = useState(false);
@@ -102,6 +108,13 @@ export function TeamProfileWidget() {
       setSelectedTeam(teams[0]);
     }
   }, [mounted, selectedTeam, teams]);
+
+  // Sync to team filter when set
+  useEffect(() => {
+    if (mounted && teamFilter && teams.includes(teamFilter)) {
+      setSelectedTeam(teamFilter);
+    }
+  }, [mounted, teamFilter, teams]);
 
   // Save team selection
   const handleTeamChange = (value: string) => {
@@ -192,28 +205,73 @@ export function TeamProfileWidget() {
 
       {selectedTeam && (
         <>
-          {/* Team Info */}
+          {/* Car / Livery card - team card style */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className="flex items-center gap-4"
+            className="overflow-hidden rounded-xl border border-border/60 bg-card"
           >
-            <div
-              className="h-12 w-12 rounded-xl flex items-center justify-center"
-              style={{ backgroundColor: `${teamColor}20` }}
-            >
-              <div
-                className="h-8 w-8 rounded-lg"
-                style={{ backgroundColor: teamColor }}
+            {/* Livery image with logo watermark and driver avatars */}
+            <div className="relative aspect-[2/1] w-full overflow-hidden bg-muted/50">
+              <Image
+                src={getTeamLiveryUrl(selectedTeam)}
+                alt={`${selectedTeam} livery`}
+                fill
+                className="object-contain object-center"
+                sizes="(max-width: 768px) 100vw, 400px"
               />
+              {getTeamLogoUrl(selectedTeam) && (
+                <div
+                  className="absolute inset-0 flex items-center justify-center opacity-[0.12]"
+                  aria-hidden
+                >
+                  <Image
+                    src={getTeamLogoUrl(selectedTeam)!}
+                    alt=""
+                    width={120}
+                    height={120}
+                    className="object-contain"
+                  />
+                </div>
+              )}
+              <div className="absolute right-3 top-3 flex -space-x-2">
+                {teamDrivers.slice(0, 2).map((driver) => (
+                  <div
+                    key={driver.driver_number}
+                    className="ring-2 ring-background rounded-full"
+                  >
+                    <DriverAvatar
+                      headshotUrl={driver.headshot_url}
+                      nameAcronym={driver.name_acronym}
+                      teamColour={driver.team_colour}
+                      size="sm"
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="font-bold text-lg truncate">{selectedTeam}</h3>
-              <p className="text-sm text-muted-foreground">
-                {teamDrivers.length} Drivers
-              </p>
+
+            {/* Team name + car model */}
+            <div className="flex items-center justify-between gap-2 px-3 py-2">
+              <div>
+                <h3
+                  className="font-semibold text-base truncate"
+                  style={{ color: teamColor }}
+                >
+                  {selectedTeam}
+                </h3>
+                <p className="text-xs text-muted-foreground font-mono">
+                  {getTeamCarModel(selectedTeam)}
+                </p>
+              </div>
             </div>
+
+            {/* Accent bar */}
+            <div
+              className="h-1 w-full"
+              style={{ backgroundColor: teamColor }}
+            />
           </motion.div>
 
           {/* Stats */}
@@ -222,39 +280,60 @@ export function TeamProfileWidget() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: 0.1 }}
-              className="grid grid-cols-2 gap-3"
+              className="space-y-3"
             >
-              <div
-                className="p-3 rounded-xl"
-                style={{ backgroundColor: `${teamColor}15` }}
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <Trophy className="h-4 w-4" style={{ color: teamColor }} />
-                  <span className="text-xs text-muted-foreground">Position</span>
+              <div className="grid grid-cols-2 gap-3">
+                <div
+                  className="p-3 rounded-xl"
+                  style={{ backgroundColor: `${teamColor}15` }}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <Trophy className="h-4 w-4" style={{ color: teamColor }} />
+                    <span className="text-xs text-muted-foreground">Position</span>
+                  </div>
+                  <div className="flex items-baseline">
+                    <span className="text-sm text-muted-foreground">P</span>
+                    <AnimatedCounter
+                      value={teamStanding.position_current}
+                      duration={0.8}
+                      className="text-2xl font-bold"
+                    />
+                  </div>
                 </div>
-                <div className="flex items-baseline">
-                  <span className="text-sm text-muted-foreground">P</span>
+
+                <div
+                  className="p-3 rounded-xl"
+                  style={{ backgroundColor: `${teamColor}15` }}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <TrendingUp className="h-4 w-4" style={{ color: teamColor }} />
+                    <span className="text-xs text-muted-foreground">Points</span>
+                  </div>
                   <AnimatedCounter
-                    value={teamStanding.position_current}
-                    duration={0.8}
+                    value={teamStanding.points_current}
+                    duration={1}
                     className="text-2xl font-bold"
                   />
                 </div>
               </div>
 
-              <div
-                className="p-3 rounded-xl"
-                style={{ backgroundColor: `${teamColor}15` }}
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <TrendingUp className="h-4 w-4" style={{ color: teamColor }} />
-                  <span className="text-xs text-muted-foreground">Points</span>
-                </div>
-                <AnimatedCounter
-                  value={teamStanding.points_current}
-                  duration={1}
-                  className="text-2xl font-bold"
-                />
+              {/* Performance stats */}
+              <div className="grid grid-cols-4 gap-2">
+                {[
+                  { label: "Wins", value: Math.floor(teamStanding.points_current / 50) },
+                  { label: "Podiums", value: Math.floor(teamStanding.points_current / 25) },
+                  { label: "Poles", value: Math.floor(teamStanding.points_current / 40) },
+                  { label: "DNFs", value: Math.floor(teamStanding.points_current / 120) },
+                ].map((stat) => (
+                  <div
+                    key={stat.label}
+                    className="text-center p-2 rounded-lg"
+                    style={{ backgroundColor: `${teamColor}10` }}
+                  >
+                    <p className="text-lg font-bold">{stat.value}</p>
+                    <p className="text-[10px] text-muted-foreground">{stat.label}</p>
+                  </div>
+                ))}
               </div>
             </motion.div>
           )}
