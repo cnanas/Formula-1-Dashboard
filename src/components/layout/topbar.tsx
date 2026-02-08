@@ -12,13 +12,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { ThemeSelector } from "./theme-selector";
 import { usePageTitle } from "@/providers/page-title-provider";
 import { useDashboardEdit } from "@/providers/dashboard-edit-provider";
@@ -140,122 +133,100 @@ export function Topbar() {
       />
       <div className="flex h-14 items-center justify-between border-b border-border/60 bg-background/90 px-3 shadow-sm backdrop-blur-md sm:h-16 sm:px-6">
         <div className="flex min-w-0 items-center gap-2 sm:gap-4">
-          {/* Mobile: title/team name is the team selector trigger */}
-          <div className="flex min-w-0 sm:hidden">
-            {mounted ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    className="flex min-w-0 items-center gap-2 rounded-lg p-1 -ml-1 text-left hover:bg-muted/50 active:bg-muted transition-colors w-full"
-                    aria-label="Select team"
-                  >
+          {/* Team selector: account-style box + dropdown (all breakpoints) */}
+          {mounted ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="flex items-center gap-2.5 rounded-xl border border-border/60 bg-background/80 px-3 py-2 shadow-sm transition-colors hover:bg-muted/50 hover:border-border focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
+                  aria-label="Select team"
+                >
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted">
                     {selectedTeam && teamLogoUrl && !logoError ? (
-                      <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-md bg-muted">
-                        <Image
-                          src={teamLogoUrl}
-                          alt=""
-                          width={32}
-                          height={32}
-                          className="object-contain p-0.5"
-                          unoptimized
-                          onError={() => setLogoError(true)}
-                        />
-                      </div>
-                    ) : null}
-                    <div className="flex min-w-0 flex-col gap-0">
-                      <span className="flex items-center gap-1 truncate text-base font-semibold tracking-tight text-foreground">
-                        {selectedTeam ?? "All teams"}
-                        <ChevronDown className="h-4 w-4 shrink-0 opacity-60" />
-                      </span>
-                      <span className="truncate text-xs text-muted-foreground">
-                        {pageTitle}
-                      </span>
-                    </div>
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="max-h-[70vh] overflow-y-auto w-56">
+                      <Image
+                        src={teamLogoUrl}
+                        alt=""
+                        width={32}
+                        height={32}
+                        className="object-contain p-0.5"
+                        unoptimized
+                        onError={() => setLogoError(true)}
+                      />
+                    ) : (
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div className="flex min-w-0 flex-col items-start gap-0">
+                    <span className="flex items-center gap-1 truncate text-sm font-semibold tracking-tight text-foreground">
+                      {selectedTeam ?? "All teams"}
+                      <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-50" />
+                    </span>
+                    <span className="truncate text-xs text-muted-foreground">
+                      {pageTitle}
+                      {subtitle ? ` · ${subtitle}` : ""}
+                    </span>
+                  </div>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="max-h-[70vh] w-56 overflow-y-auto rounded-xl border-border/60 shadow-lg">
+                <DropdownMenuItem
+                  onClick={() => {
+                    setSelectedTeam(null);
+                    resetToDefault();
+                  }}
+                  className="rounded-lg py-2.5"
+                >
+                  <Users className="mr-2.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                  All teams
+                </DropdownMenuItem>
+                {teams.map((team) => (
                   <DropdownMenuItem
+                    key={team}
                     onClick={() => {
-                      setSelectedTeam(null);
-                      resetToDefault();
+                      setSelectedTeam(team);
+                      setTeamTheme(team);
                     }}
+                    className="rounded-lg py-2.5"
                   >
-                    <Users className="h-4 w-4 mr-2 text-muted-foreground" />
-                    All teams
+                    <span className="flex items-center gap-2.5">
+                      {getTeamLogoUrl(team) ? (
+                        <span className="relative h-5 w-5 shrink-0 overflow-hidden rounded-md">
+                          <Image
+                            src={getTeamLogoUrl(team)!}
+                            alt=""
+                            width={20}
+                            height={20}
+                            className="object-contain"
+                            unoptimized
+                          />
+                        </span>
+                      ) : (
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-muted text-[10px] font-bold text-muted-foreground">
+                          {team.slice(0, 2)}
+                        </span>
+                      )}
+                      {team}
+                    </span>
                   </DropdownMenuItem>
-                  {teams.map((team) => (
-                    <DropdownMenuItem
-                      key={team}
-                      onClick={() => {
-                        setSelectedTeam(team);
-                        setTeamTheme(team);
-                      }}
-                    >
-                      <span className="flex items-center gap-2">
-                        {getTeamLogoUrl(team) ? (
-                          <span className="relative h-5 w-5 shrink-0 overflow-hidden rounded">
-                            <Image
-                              src={getTeamLogoUrl(team)!}
-                              alt=""
-                              width={20}
-                              height={20}
-                              className="object-contain"
-                              unoptimized
-                            />
-                          </span>
-                        ) : (
-                          <span className="h-5 w-5 rounded bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground shrink-0">
-                            {team.slice(0, 2)}
-                          </span>
-                        )}
-                        {team}
-                      </span>
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <div className="flex min-w-0 flex-col gap-0 py-1">
-                <span className="truncate text-base font-semibold tracking-tight text-foreground">
-                  {selectedTeam ? `${selectedTeam} · ${pageTitle}` : pageTitle}
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <div className="flex items-center gap-2.5 rounded-xl border border-border/60 bg-background/80 px-3 py-2">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted">
+                <Users className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div className="flex min-w-0 flex-col gap-0">
+                <span className="truncate text-sm font-semibold text-foreground">
+                  {selectedTeam ?? "All teams"}
                 </span>
-              </div>
-            )}
-          </div>
-
-          {/* Desktop: title + optional logo (not a trigger) */}
-          <div className="hidden sm:flex min-w-0 items-center gap-2 sm:gap-3">
-            {selectedTeam && (
-              <div className="relative h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted flex">
-                {teamLogoUrl && !logoError ? (
-                  <Image
-                    src={teamLogoUrl}
-                    alt={selectedTeam}
-                    width={36}
-                    height={36}
-                    className="object-contain p-1"
-                    unoptimized
-                    onError={() => setLogoError(true)}
-                  />
-                ) : (
-                  <span className="text-xs font-bold text-muted-foreground">
-                    {selectedTeam.slice(0, 2).toUpperCase()}
-                  </span>
-                )}
-              </div>
-            )}
-            <div className="flex min-w-0 flex-col gap-0.5">
-              <h1 className="truncate text-base font-semibold tracking-tight text-foreground sm:text-xl">
-                {selectedTeam ? `${selectedTeam} · ${pageTitle}` : pageTitle}
-              </h1>
-              {subtitle && (
                 <span className="truncate text-xs text-muted-foreground">
-                  {subtitle}
+                  {pageTitle}
                 </span>
-              )}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Live session indicator */}
           {isLive && latestSession && (
@@ -319,36 +290,7 @@ export function Topbar() {
             </div>
           )}
 
-          {/* Team filter - hidden on mobile */}
-          {mounted && (
-            <Select
-              value={selectedTeam ?? "all"}
-              onValueChange={(v) => {
-                const team = v === "all" ? null : v;
-                setSelectedTeam(team);
-                if (team) {
-                  setTeamTheme(team);
-                } else {
-                  resetToDefault();
-                }
-              }}
-            >
-              <SelectTrigger className="hidden h-8 w-[140px] gap-1.5 rounded-lg border-border/50 bg-muted/30 text-sm font-medium sm:flex">
-                <Users className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                <SelectValue placeholder="Team" />
-              </SelectTrigger>
-              <SelectContent align="end">
-                <SelectItem value="all">All teams</SelectItem>
-                {teams.map((team) => (
-                  <SelectItem key={team} value={team}>
-                    {team}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-
-          {/* Divider before actions - hidden on mobile */}
+          {/* Divider before actions */}
           <div className="hidden h-6 w-px bg-border/60 sm:block" aria-hidden />
 
           {/* Edit + Theme */}
