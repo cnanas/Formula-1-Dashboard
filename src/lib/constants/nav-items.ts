@@ -21,12 +21,11 @@ export interface NavItem {
   icon: LucideIcon;
 }
 
-// Default order: Home, Live, Calendar, Game Setups, News, Standings, Track History, Compare, Pit Stops, Overtakes, Speed Traps, Weather
+// Default order: Home, Live, Calendar, Game Setups, News, Standings, Track History, Compare, Pit Stops, Overtakes, Speed Traps, Weather, Game Telemetry (last)
 export const DEFAULT_NAV_ORDER: string[] = [
   "home",
   "live",
   "calendar",
-  "game-telemetry",
   "game-setups",
   "news",
   "standings",
@@ -36,6 +35,7 @@ export const DEFAULT_NAV_ORDER: string[] = [
   "overtakes",
   "speed-traps",
   "weather",
+  "game-telemetry",
 ];
 
 export const NAV_ITEMS: Record<string, NavItem> = {
