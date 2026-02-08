@@ -12,7 +12,7 @@ interface NavigationModeContextType {
 }
 
 const defaultContextValue: NavigationModeContextType = {
-  mode: "sidebar",
+  mode: "bottom",
   setMode: () => {},
   toggleMode: () => {},
   mounted: true,
@@ -41,7 +41,7 @@ export function NavigationModeProvider({
   initialMode?: NavigationMode | null;
 }) {
   const [mode, setModeState] = useState<NavigationMode>(
-    initialMode === "bottom" || initialMode === "sidebar" ? initialMode : "sidebar"
+    initialMode === "bottom" || initialMode === "sidebar" ? initialMode : "bottom"
   );
   const [mounted, setMounted] = useState(true);
 

@@ -194,6 +194,7 @@ const DEFAULT_WIDGETS = [
   "driver-h2h",
   "circuit-info",
   "news",
+  "calendar",
   "driver-profile",
   "team-profile",
 ];
@@ -201,7 +202,7 @@ const DEFAULT_WIDGETS = [
 // Default layout matching the user's preferred arrangement:
 // Left column: Standings, Constructors, Driver Comparison
 // Middle column: Circuit Info/Schedule, Latest News
-// Right column: Driver Profile, Team Profile, Team Performance
+// Right column: Driver Profile, Team Profile, Upcoming Races
 const DEFAULT_LAYOUTS: ResponsiveLayouts = {
   lg: [
     // Left column (x: 0, w: 4)
@@ -214,6 +215,7 @@ const DEFAULT_LAYOUTS: ResponsiveLayouts = {
     // Right column (x: 8, w: 4)
     { i: "driver-profile", x: 8, y: 0, w: 4, h: 6, minW: 3, minH: 5 },
     { i: "team-profile", x: 8, y: 6, w: 4, h: 6, minW: 3, minH: 5 },
+    { i: "calendar", x: 8, y: 12, w: 4, h: 4, minW: 3, minH: 4 },
   ],
   md: [
     // Two columns on medium screens
@@ -224,6 +226,7 @@ const DEFAULT_LAYOUTS: ResponsiveLayouts = {
     { i: "news", x: 0, y: 13, w: 5, h: 6, minW: 3, minH: 4 },
     { i: "driver-profile", x: 5, y: 13, w: 5, h: 6, minW: 3, minH: 5 },
     { i: "team-profile", x: 0, y: 19, w: 5, h: 6, minW: 3, minH: 5 },
+    { i: "calendar", x: 5, y: 19, w: 5, h: 4, minW: 3, minH: 4 },
   ],
   sm: [
     // Single column on small screens
@@ -234,6 +237,7 @@ const DEFAULT_LAYOUTS: ResponsiveLayouts = {
     { i: "driver-h2h", x: 0, y: 26, w: 6, h: 6, minW: 3, minH: 5 },
     { i: "driver-profile", x: 0, y: 32, w: 6, h: 6, minW: 3, minH: 5 },
     { i: "team-profile", x: 0, y: 38, w: 6, h: 6, minW: 3, minH: 5 },
+    { i: "calendar", x: 0, y: 44, w: 6, h: 4, minW: 3, minH: 4 },
   ],
 };
 
