@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useCallback, useEffect } from "react";
+import { useRef, useCallback, useEffect, useState } from "react";
 import {
   Sheet,
   SheetContent,
@@ -70,7 +70,8 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-const SWIPE_CLOSE_THRESHOLD_PX = 60;
+const SWIPE_CLOSE_THRESHOLD_PX = 80;
+const MAX_DRAG_DISTANCE = 200;
 
 export function SetupDetailSheet({
   trackName,
@@ -80,117 +81,121 @@ export function SetupDetailSheet({
   onOpenChange,
 }: SetupDetailSheetProps) {
   const theme = CIRCUIT_THEMES[circuitKey] ?? CIRCUIT_THEMES.bahrain;
-  const handleRef = useRef<HTMLDivElement>(null);
-  const dragStartY = useRef<number | null>(null);
+  const sheetContentRef = useRef<HTMLDivElement>(null);
+  const startY = useRef<number>(0);
   const isDragging = useRef(false);
+  const [dragOffset, setDragOffset] = useState(0);
 
-  // Touch event handlers for mobile swipe-to-close
+  // Reset drag offset when sheet opens/closes
   useEffect(() => {
-    const handle = handleRef.current;
-    if (!handle || !open) return;
+    if (!open) {
+      setDragOffset(0);
+    }
+  }, [open]);
 
-    const handleTouchStart = (e: TouchEvent) => {
-      if (e.touches.length === 1) {
-        dragStartY.current = e.touches[0].clientY;
-        isDragging.current = true;
-      }
-    };
+  // Unified handler for closing based on drag distance
+  const handleDragEnd = useCallback((endY: number) => {
+    const deltaY = endY - startY.current;
+    if (deltaY > SWIPE_CLOSE_THRESHOLD_PX) {
+      onOpenChange(false);
+    }
+    setDragOffset(0);
+  }, [onOpenChange]);
 
-    const handleTouchMove = (e: TouchEvent) => {
-      // Prevent default to stop any scroll behavior on the handle
-      if (isDragging.current) {
-        e.preventDefault();
-      }
-    };
+  // Update drag offset for visual feedback
+  const updateDragOffset = useCallback((currentY: number) => {
+    const deltaY = Math.max(0, currentY - startY.current);
+    // Clamp the drag distance and add resistance
+    const clampedDelta = Math.min(deltaY, MAX_DRAG_DISTANCE);
+    setDragOffset(clampedDelta);
+  }, []);
 
-    const handleTouchEnd = (e: TouchEvent) => {
-      if (!isDragging.current || dragStartY.current === null) return;
-      
-      const touch = e.changedTouches[0];
-      if (touch) {
-        const deltaY = touch.clientY - dragStartY.current;
-        if (deltaY > SWIPE_CLOSE_THRESHOLD_PX) {
-          onOpenChange(false);
-        }
-      }
-      
-      dragStartY.current = null;
-      isDragging.current = false;
-    };
+  // Touch handlers for mobile
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      startY.current = e.touches[0].clientY;
+      isDragging.current = true;
+    }
+  }, []);
 
-    const handleTouchCancel = () => {
-      dragStartY.current = null;
-      isDragging.current = false;
-    };
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!isDragging.current) return;
+    updateDragOffset(e.touches[0].clientY);
+    // Prevent scrolling while dragging the handle
+    e.preventDefault();
+  }, [updateDragOffset]);
 
-    // Add touch event listeners with passive: false to allow preventDefault
-    handle.addEventListener("touchstart", handleTouchStart, { passive: true });
-    handle.addEventListener("touchmove", handleTouchMove, { passive: false });
-    handle.addEventListener("touchend", handleTouchEnd, { passive: true });
-    handle.addEventListener("touchcancel", handleTouchCancel, { passive: true });
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (!isDragging.current) return;
+    const touch = e.changedTouches[0];
+    if (touch) {
+      handleDragEnd(touch.clientY);
+    }
+    isDragging.current = false;
+  }, [handleDragEnd]);
 
-    return () => {
-      handle.removeEventListener("touchstart", handleTouchStart);
-      handle.removeEventListener("touchmove", handleTouchMove);
-      handle.removeEventListener("touchend", handleTouchEnd);
-      handle.removeEventListener("touchcancel", handleTouchCancel);
-    };
-  }, [open, onOpenChange]);
+  // Mouse handlers for desktop
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    startY.current = e.clientY;
+    isDragging.current = true;
+    document.body.style.cursor = "grabbing";
+    document.body.style.userSelect = "none";
+  }, []);
 
-  // Mouse drag handlers for desktop - using document-level listeners for smooth dragging
+  // Document-level mouse listeners for desktop drag
   useEffect(() => {
     if (!open) return;
 
     const handleMouseMove = (e: MouseEvent) => {
-      if (!isDragging.current || dragStartY.current === null) return;
-      // Optional: could add visual feedback here during drag
+      if (!isDragging.current) return;
+      updateDragOffset(e.clientY);
     };
 
     const handleMouseUp = (e: MouseEvent) => {
-      if (!isDragging.current || dragStartY.current === null) return;
-      
-      const deltaY = e.clientY - dragStartY.current;
-      if (deltaY > SWIPE_CLOSE_THRESHOLD_PX) {
-        onOpenChange(false);
-      }
-      
-      dragStartY.current = null;
+      if (!isDragging.current) return;
+      handleDragEnd(e.clientY);
       isDragging.current = false;
       document.body.style.cursor = "";
       document.body.style.userSelect = "";
     };
 
-    // Add document-level listeners for mouse drag
     document.addEventListener("mousemove", handleMouseMove);
     document.addEventListener("mouseup", handleMouseUp);
 
     return () => {
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
+      // Clean up styles on unmount
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
     };
-  }, [open, onOpenChange]);
+  }, [open, handleDragEnd, updateDragOffset]);
 
-  // Mouse down handler for desktop drag initiation
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    dragStartY.current = e.clientY;
-    isDragging.current = true;
-    document.body.style.cursor = "grabbing";
-    document.body.style.userSelect = "none";
-  }, []);
+  // Calculate visual feedback styles
+  const dragProgress = dragOffset / SWIPE_CLOSE_THRESHOLD_PX;
+  const opacity = Math.max(0.3, 1 - dragProgress * 0.5);
+  const scale = Math.max(0.95, 1 - dragProgress * 0.03);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
+        ref={sheetContentRef}
         side="bottom"
-        className="h-[85vh] max-h-[800px] rounded-t-2xl p-0 flex flex-col"
+        className="h-[85vh] max-h-[800px] rounded-t-2xl p-0 flex flex-col transition-transform duration-75 ease-out"
         showCloseButton={false}
+        style={{
+          transform: dragOffset > 0 ? `translateY(${dragOffset}px) scale(${scale})` : undefined,
+          opacity: dragOffset > 0 ? opacity : undefined,
+        }}
       >
         {/* Handle bar: swipe/drag down to close */}
         <div
-          ref={handleRef}
-          className="flex justify-center items-center pt-2 pb-4 shrink-0 select-none min-h-[2.5rem] cursor-grab active:cursor-grabbing"
+          className="flex justify-center items-center pt-3 pb-5 shrink-0 select-none min-h-[3rem] cursor-grab active:cursor-grabbing touch-none"
           onMouseDown={handleMouseDown}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
           role="button"
           tabIndex={0}
           aria-label="Drag down to close"
@@ -199,7 +204,9 @@ export function SetupDetailSheet({
           }}
         >
           <div
-            className="w-10 h-1 rounded-full bg-muted-foreground/30 pointer-events-none"
+            className={`w-12 h-1.5 rounded-full pointer-events-none transition-colors ${
+              dragProgress > 0.5 ? "bg-red-400" : "bg-muted-foreground/40"
+            }`}
             aria-hidden
           />
         </div>
