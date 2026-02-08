@@ -12,6 +12,7 @@ import {
   Zap,
   CloudSun,
   MapPin,
+  Gamepad2,
 } from "lucide-react";
 import type { NavSection } from "@/types/app";
 
@@ -25,6 +26,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: "Teams", href: "/teams", icon: Users },
       { label: "Standings", href: "/standings", icon: Trophy },
       { label: "News", href: "/news", icon: Newspaper },
+      { label: "Game Setups", href: "/setups", icon: Gamepad2 },
     ],
   },
   {

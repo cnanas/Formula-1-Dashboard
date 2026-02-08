@@ -22,6 +22,7 @@ import {
   Shirt,
   User,
   Users,
+  Gamepad2,
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -45,6 +46,7 @@ import { SocialBannerWidget } from "./widgets/social-banner-widget";
 import { NewLiveriesWidget } from "./widgets/new-liveries-widget";
 import { DriverProfileWidget } from "./widgets/driver-profile-widget";
 import { TeamProfileWidget } from "./widgets/team-profile-widget";
+import { GameSetupsWidget } from "./widgets/game-setups-widget";
 import { useDashboardEdit } from "@/providers/dashboard-edit-provider";
 
 import "react-grid-layout/css/styles.css";
@@ -182,6 +184,13 @@ const WIDGET_REGISTRY: Record<
     component: TeamProfileWidget,
     defaultSize: { w: 4, h: 6 },
   },
+  "game-setups": {
+    title: "F1 25 Setups",
+    subtitle: "Game Car Setups",
+    icon: Gamepad2,
+    component: GameSetupsWidget,
+    defaultSize: { w: 4, h: 8 },
+  },
 };
 
 const STORAGE_KEY = "f1dash_widget_layouts_v4";
@@ -193,6 +202,7 @@ const DEFAULT_WIDGETS = [
   "constructor-standings",
   "driver-h2h",
   "circuit-info",
+  "game-setups",
   "news",
   "calendar",
   "driver-profile",
@@ -211,7 +221,8 @@ const DEFAULT_LAYOUTS: ResponsiveLayouts = {
     { i: "driver-h2h", x: 0, y: 14, w: 4, h: 6, minW: 3, minH: 5 },
     // Middle column (x: 4, w: 4)
     { i: "circuit-info", x: 4, y: 0, w: 4, h: 6, minW: 4, minH: 5 },
-    { i: "news", x: 4, y: 6, w: 4, h: 6, minW: 3, minH: 4 },
+    { i: "game-setups", x: 4, y: 6, w: 4, h: 8, minW: 3, minH: 5 },
+    { i: "news", x: 4, y: 14, w: 4, h: 6, minW: 3, minH: 4 },
     // Right column (x: 8, w: 4)
     { i: "driver-profile", x: 8, y: 0, w: 4, h: 6, minW: 3, minH: 5 },
     { i: "team-profile", x: 8, y: 6, w: 4, h: 6, minW: 3, minH: 5 },
@@ -223,21 +234,23 @@ const DEFAULT_LAYOUTS: ResponsiveLayouts = {
     { i: "constructor-standings", x: 5, y: 0, w: 5, h: 7, minW: 3, minH: 5 },
     { i: "driver-h2h", x: 0, y: 7, w: 5, h: 6, minW: 3, minH: 5 },
     { i: "circuit-info", x: 5, y: 7, w: 5, h: 6, minW: 4, minH: 5 },
-    { i: "news", x: 0, y: 13, w: 5, h: 6, minW: 3, minH: 4 },
-    { i: "driver-profile", x: 5, y: 13, w: 5, h: 6, minW: 3, minH: 5 },
-    { i: "team-profile", x: 0, y: 19, w: 5, h: 6, minW: 3, minH: 5 },
-    { i: "calendar", x: 5, y: 19, w: 5, h: 4, minW: 3, minH: 4 },
+    { i: "game-setups", x: 0, y: 13, w: 5, h: 8, minW: 3, minH: 5 },
+    { i: "news", x: 5, y: 13, w: 5, h: 6, minW: 3, minH: 4 },
+    { i: "driver-profile", x: 0, y: 19, w: 5, h: 6, minW: 3, minH: 5 },
+    { i: "team-profile", x: 5, y: 19, w: 5, h: 6, minW: 3, minH: 5 },
+    { i: "calendar", x: 0, y: 25, w: 5, h: 4, minW: 3, minH: 4 },
   ],
   sm: [
     // Single column on small screens
     { i: "standings", x: 0, y: 0, w: 6, h: 7, minW: 3, minH: 5 },
     { i: "constructor-standings", x: 0, y: 7, w: 6, h: 7, minW: 3, minH: 5 },
     { i: "circuit-info", x: 0, y: 14, w: 6, h: 6, minW: 4, minH: 5 },
-    { i: "news", x: 0, y: 20, w: 6, h: 6, minW: 3, minH: 4 },
-    { i: "driver-h2h", x: 0, y: 26, w: 6, h: 6, minW: 3, minH: 5 },
-    { i: "driver-profile", x: 0, y: 32, w: 6, h: 6, minW: 3, minH: 5 },
-    { i: "team-profile", x: 0, y: 38, w: 6, h: 6, minW: 3, minH: 5 },
-    { i: "calendar", x: 0, y: 44, w: 6, h: 4, minW: 3, minH: 4 },
+    { i: "game-setups", x: 0, y: 20, w: 6, h: 8, minW: 3, minH: 5 },
+    { i: "news", x: 0, y: 28, w: 6, h: 6, minW: 3, minH: 4 },
+    { i: "driver-h2h", x: 0, y: 34, w: 6, h: 6, minW: 3, minH: 5 },
+    { i: "driver-profile", x: 0, y: 40, w: 6, h: 6, minW: 3, minH: 5 },
+    { i: "team-profile", x: 0, y: 46, w: 6, h: 6, minW: 3, minH: 5 },
+    { i: "calendar", x: 0, y: 52, w: 6, h: 4, minW: 3, minH: 4 },
   ],
 };
 
