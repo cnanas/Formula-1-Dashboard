@@ -332,48 +332,73 @@ export function Topbar() {
         </div>
 
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-          {/* Season selector: pill group - compact on mobile */}
+          {/* Season selector: on mobile single dropdown with all seasons; on desktop pill group + older dropdown */}
           {mounted ? (
-            <div className="flex items-center rounded-lg border border-border/50 bg-muted/30 p-0.5">
-              {recentSeasons.map((y) => (
-                <Button
-                  key={y}
-                  variant={season === y ? "secondary" : "ghost"}
-                  size="sm"
-                  className="h-7 min-w-[2.5rem] rounded-md px-2 text-xs font-medium transition-colors sm:h-8 sm:min-w-[2.75rem] sm:px-3 sm:text-sm"
-                  onClick={() => setSeason(y)}
-                >
-                  {y}
-                </Button>
-              ))}
-              {olderSeasons.length > 0 && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant={recentSeasons.includes(season) ? "ghost" : "secondary"}
-                      size="sm"
-                      className="h-7 gap-1 rounded-md border-0 px-2 text-xs font-medium sm:h-8 sm:gap-1.5 sm:px-2.5 sm:text-sm"
+            <>
+              {/* Mobile: all seasons in one dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="h-7 gap-1 rounded-md border-0 px-2 text-xs font-medium sm:hidden"
+                  >
+                    <Calendar className="h-3 w-3 text-muted-foreground" />
+                    {season}
+                    <ChevronDown className="h-3 w-3 opacity-70" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="min-w-[8rem] max-h-[70vh] overflow-y-auto">
+                  {availableSeasons.map((y) => (
+                    <DropdownMenuItem
+                      key={y}
+                      onClick={() => setSeason(y)}
                     >
-                      <Calendar className="h-3 w-3 text-muted-foreground sm:h-3.5 sm:w-3.5" />
-                      <span className="hidden sm:inline">
-                        {recentSeasons.includes(season) ? "Older" : season}
-                      </span>
-                      <ChevronDown className="h-3 w-3 opacity-70 sm:h-3.5 sm:w-3.5" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="min-w-[8rem]">
-                    {olderSeasons.map((y) => (
-                      <DropdownMenuItem
-                        key={y}
-                        onClick={() => setSeason(y)}
+                      Season {y}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              {/* Desktop: pill group + older dropdown */}
+              <div className="hidden sm:flex items-center rounded-lg border border-border/50 bg-muted/30 p-0.5">
+                {recentSeasons.map((y) => (
+                  <Button
+                    key={y}
+                    variant={season === y ? "secondary" : "ghost"}
+                    size="sm"
+                    className="h-8 min-w-[2.75rem] rounded-md px-3 text-sm font-medium transition-colors"
+                    onClick={() => setSeason(y)}
+                  >
+                    {y}
+                  </Button>
+                ))}
+                {olderSeasons.length > 0 && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant={recentSeasons.includes(season) ? "ghost" : "secondary"}
+                        size="sm"
+                        className="h-8 gap-1.5 rounded-md border-0 px-2.5 text-sm font-medium"
                       >
-                        Season {y}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
-            </div>
+                        <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                        {recentSeasons.includes(season) ? "Older" : season}
+                        <ChevronDown className="h-3.5 w-3.5 opacity-70" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="min-w-[8rem]">
+                      {olderSeasons.map((y) => (
+                        <DropdownMenuItem
+                          key={y}
+                          onClick={() => setSeason(y)}
+                        >
+                          Season {y}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </div>
+            </>
           ) : (
             <div className="flex h-7 items-center gap-1 rounded-lg border border-border/50 bg-muted/30 px-2 text-xs font-medium text-muted-foreground sm:h-8 sm:gap-1.5 sm:px-3 sm:text-sm">
               <Calendar className="h-3 w-3 sm:h-3.5 sm:w-3.5" />

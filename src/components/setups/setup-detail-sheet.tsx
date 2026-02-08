@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef, useCallback } from "react";
 import {
   Sheet,
   SheetContent,
@@ -69,6 +70,8 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
+const SWIPE_CLOSE_THRESHOLD_PX = 60;
+
 export function SetupDetailSheet({
   trackName,
   circuitKey,
@@ -77,6 +80,26 @@ export function SetupDetailSheet({
   onOpenChange,
 }: SetupDetailSheetProps) {
   const theme = CIRCUIT_THEMES[circuitKey] ?? CIRCUIT_THEMES.bahrain;
+  const dragStartY = useRef<number | null>(null);
+
+  const handlePointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      dragStartY.current = e.clientY;
+    },
+    []
+  );
+
+  const handlePointerUp = useCallback(
+    (e: React.PointerEvent) => {
+      if (dragStartY.current === null) return;
+      const deltaY = e.clientY - dragStartY.current;
+      if (deltaY > SWIPE_CLOSE_THRESHOLD_PX) {
+        onOpenChange(false);
+      }
+      dragStartY.current = null;
+    },
+    [onOpenChange]
+  );
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -85,10 +108,35 @@ export function SetupDetailSheet({
         className="h-[85vh] max-h-[800px] rounded-t-2xl p-0 flex flex-col"
         showCloseButton={false}
       >
-        {/* Handle bar for mobile swipe gesture */}
-        <div className="flex justify-center pt-2 pb-1 shrink-0">
+        {/* Handle bar: swipe down to close */}
+        <div
+          className="flex justify-center items-center pt-2 pb-4 shrink-0 touch-none select-none min-h-[2.5rem] [cursor:grab] active:[cursor:grabbing]"
+          style={{ cursor: "grab" }}
+          onPointerDown={(e) => {
+            (e.currentTarget as HTMLElement).style.cursor = "grabbing";
+            handlePointerDown(e);
+          }}
+          onPointerUp={(e) => {
+            (e.currentTarget as HTMLElement).style.cursor = "grab";
+            handlePointerUp(e);
+          }}
+          onPointerLeave={(e) => {
+            (e.currentTarget as HTMLElement).style.cursor = "grab";
+            handlePointerUp(e);
+          }}
+          onPointerCancel={(e) => {
+            (e.currentTarget as HTMLElement).style.cursor = "grab";
+            handlePointerUp(e);
+          }}
+          role="button"
+          tabIndex={0}
+          aria-label="Swipe down to close"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") onOpenChange(false);
+          }}
+        >
           <div
-            className="w-10 h-1 rounded-full bg-muted-foreground/30"
+            className="w-10 h-1 rounded-full bg-muted-foreground/30 pointer-events-none"
             aria-hidden
           />
         </div>
