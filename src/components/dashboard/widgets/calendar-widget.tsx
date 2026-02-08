@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { format, isPast } from "date-fns";
 import { MapPin, CheckCircle2 } from "lucide-react";
 import { useOpenF1 } from "@/hooks/use-openf1";
 import { useSeason } from "@/providers/season-provider";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ScheduleMiniMap } from "@/components/calendar/schedule-mini-map";
-import { getCircuitCoordinates } from "@/lib/constants/circuit-coordinates";
+import { getCircuitTheme } from "@/lib/constants/circuits";
+import { getCountryFlagCode } from "@/lib/constants/country-codes";
 
 export function CalendarWidget() {
   const { season } = useSeason();
@@ -56,11 +57,24 @@ export function CalendarWidget() {
       <div className="space-y-1">
         {completed.map((meeting) => {
           const startDate = new Date(meeting.date_start);
+          const flagCode = (getCircuitTheme(meeting.circuit_short_name).countryCode || getCountryFlagCode(meeting.country_code)).toLowerCase();
           return (
             <div
               key={meeting.meeting_key}
               className="flex items-center gap-3 py-2 px-1 rounded-md hover:bg-muted/50 transition-colors"
             >
+              {flagCode && (
+                <span className="relative h-5 w-6 shrink-0 overflow-hidden rounded-sm">
+                  <Image
+                    src={`https://flagcdn.com/24x18/${flagCode}.png`}
+                    alt=""
+                    width={24}
+                    height={18}
+                    className="object-cover h-full w-full"
+                    unoptimized
+                  />
+                </span>
+              )}
               <div className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-lg bg-muted text-[10px]">
                 <span className="font-bold leading-none">
                   {format(startDate, "dd")}
@@ -95,23 +109,12 @@ export function CalendarWidget() {
     );
   }
 
-  const nextRace = upcoming[0];
-  const nextCoords = nextRace
-    ? getCircuitCoordinates(nextRace.circuit_short_name)
-    : null;
-
   return (
     <div className="space-y-2">
-      {nextCoords && (
-        <ScheduleMiniMap
-          longitude={nextCoords[0]}
-          latitude={nextCoords[1]}
-          className="w-full h-[120px] object-cover rounded-xl"
-        />
-      )}
       {upcoming.map((meeting) => {
         const startDate = new Date(meeting.date_start);
         const isActive = isPast(startDate) && !isPast(new Date(meeting.date_end));
+        const flagCode = (getCircuitTheme(meeting.circuit_short_name).countryCode || getCountryFlagCode(meeting.country_code)).toLowerCase();
 
         return (
           <div
@@ -120,6 +123,18 @@ export function CalendarWidget() {
               isActive ? "bg-red-500/5" : "hover:bg-muted/50"
             } transition-colors`}
           >
+            {flagCode && (
+              <span className="relative h-5 w-6 shrink-0 overflow-hidden rounded-sm">
+                <Image
+                  src={`https://flagcdn.com/24x18/${flagCode}.png`}
+                  alt=""
+                  width={24}
+                  height={18}
+                  className="object-cover h-full w-full"
+                  unoptimized
+                />
+              </span>
+            )}
             <div className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-lg bg-muted text-[10px]">
               <span className="font-bold leading-none">
                 {format(startDate, "dd")}

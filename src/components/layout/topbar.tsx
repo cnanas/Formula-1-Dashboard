@@ -280,8 +280,8 @@ export function Topbar() {
             </div>
           )}
 
-          {/* Live session indicator + Watch now (US: Apple TV) */}
-          {isLive && latestSession && (
+          {/* Live session indicator + Watch now (US: Apple TV) - only after mount to avoid hydration mismatch */}
+          {mounted && isLive && latestSession && (
             <div className="ml-1 hidden shrink-0 items-center gap-1.5 sm:flex">
               <Badge
                 variant="destructive"
@@ -309,8 +309,8 @@ export function Topbar() {
             </div>
           )}
 
-          {/* Next race/event countdown: flag, circuit name, countdown (no Watch now when not live) */}
-          {!isLive && nextSession && nextSessionDate && (
+          {/* Next race/event countdown: flag, circuit name, countdown - only after mount to avoid hydration mismatch */}
+          {mounted && !isLive && nextSession && nextSessionDate && (
             <div className="ml-1 hidden shrink-0 items-center gap-2 rounded-lg border border-border/60 bg-muted/30 px-2.5 py-1.5 sm:flex">
               <span className="relative h-4 w-5 shrink-0 overflow-hidden rounded-sm">
                 <Image
@@ -411,8 +411,8 @@ export function Topbar() {
         </div>
       </div>
 
-      {/* Mobile-only: second row for countdown or live (full-width strip below main header) */}
-      {!isLive && nextSession && nextSessionDate && (
+      {/* Mobile-only: second row for countdown or live - only after mount to avoid hydration mismatch */}
+      {mounted && !isLive && nextSession && nextSessionDate && (
         <div className="flex sm:hidden w-full items-center gap-2 border-t border-border/50 bg-muted/30 px-3 py-2">
           <span className="relative h-4 w-5 shrink-0 overflow-hidden rounded-sm">
             <Image
@@ -431,7 +431,7 @@ export function Topbar() {
           <HeaderCountdown targetDate={nextSessionDate} />
         </div>
       )}
-      {isLive && latestSession && (
+      {mounted && isLive && latestSession && (
         <div className="flex sm:hidden w-full items-center justify-between gap-2 border-t border-border/50 bg-red-500/10 px-3 py-2">
           <div className="flex min-w-0 items-center gap-2">
             <Badge variant="destructive" className="shrink-0 animate-pulse rounded-full px-2 py-0.5 text-xs font-medium">
