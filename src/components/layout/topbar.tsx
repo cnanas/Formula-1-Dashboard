@@ -411,9 +411,9 @@ export function Topbar() {
         </div>
       </div>
 
-      {/* Mobile-only: second row for countdown or live - only after mount to avoid hydration mismatch */}
+      {/* Mobile-only: second row for countdown or live - white background on mobile */}
       {mounted && !isLive && nextSession && nextSessionDate && (
-        <div className="flex sm:hidden w-full items-center gap-2 border-t border-border/50 bg-muted/30 px-3 py-2">
+        <div className="flex sm:hidden w-full items-center gap-2 border-t border-border/50 bg-background px-3 py-2">
           <span className="relative h-4 w-5 shrink-0 overflow-hidden rounded-sm">
             <Image
               src={`https://flagcdn.com/24x18/${(getCircuitTheme(nextSession.circuit_short_name).countryCode || getCountryFlagCode(nextSession.country_code)).toLowerCase()}.png`}

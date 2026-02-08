@@ -120,8 +120,15 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    overflow-x: hidden;
+    max-width: 100%;
+  }
   body {
     @apply bg-background text-foreground;
+    overflow-x: hidden;
+    max-width: 100%;
+    min-width: 0;
   }
 }
 

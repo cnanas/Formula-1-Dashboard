@@ -25,7 +25,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
       <DynamicBackground />
       <WelcomeTeamModal />
 
-      <div className="relative flex min-h-screen">
+      <div className="relative flex min-h-screen min-w-0 overflow-x-hidden">
         {mode === "sidebar" && (
           <div className="hidden md:block">
             <Sidebar />
@@ -34,13 +34,13 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
         <main
           className={cn(
-            "flex-1 transition-all duration-300",
+            "flex-1 min-w-0 overflow-x-hidden transition-all duration-300",
             mode === "sidebar" && (collapsed ? "md:ml-16" : "md:ml-64"),
             mode === "bottom" && "pb-24"
           )}
         >
           <Topbar />
-          <div className="p-4 md:p-6">{children}</div>
+          <div className="px-2 py-4 sm:px-3 md:px-4 md:py-6">{children}</div>
         </main>
       </div>
 

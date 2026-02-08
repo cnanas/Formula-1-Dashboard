@@ -114,14 +114,14 @@ export function BottomNav() {
                       key={item.href}
                       href={item.href}
                       className={cn(
-                        "flex flex-col items-center gap-1.5 p-3 rounded-xl transition-all",
+                        "flex flex-col items-center gap-1.5 p-3 rounded-xl transition-all text-center",
                         active
                           ? "bg-primary/10 text-primary"
                           : "text-muted-foreground hover:bg-muted hover:text-foreground"
                       )}
                     >
-                      <Icon className="h-5 w-5" />
-                      <span className="text-[10px] font-medium">{item.label}</span>
+                      <Icon className="h-5 w-5 shrink-0" />
+                      <span className="text-[10px] font-medium text-center leading-tight">{item.label}</span>
                     </Link>
                   );
                 })}
@@ -131,10 +131,10 @@ export function BottomNav() {
         )}
       </AnimatePresence>
 
-      <nav className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 md:hidden">
+      <nav className="fixed bottom-4 left-2 right-2 z-50 md:hidden flex justify-center">
         <motion.div
           layout
-          className="flex items-center gap-1 px-2 py-2 rounded-full border border-border/50 bg-card/95 backdrop-blur-xl shadow-2xl"
+          className="flex items-center gap-0.5 px-1 py-2 rounded-full border border-border/50 bg-card/95 backdrop-blur-xl shadow-2xl w-fit max-w-full overflow-hidden"
           style={{
             boxShadow: `0 10px 50px -10px ${theme.primaryColor}50, 0 0 0 1px ${theme.primaryColor}25, 0 4px 20px -5px rgba(0,0,0,0.3)`,
           }}
@@ -146,7 +146,7 @@ export function BottomNav() {
               <Link key={item.href} href={item.href} className="relative">
                 <motion.div
                   className={cn(
-                    "flex items-center gap-2 px-4 py-2.5 rounded-full transition-colors",
+                    "flex items-center gap-1.5 px-2.5 py-2 rounded-full transition-colors shrink-0",
                     active
                       ? "text-primary-foreground"
                       : "text-muted-foreground hover:text-foreground"
@@ -161,13 +161,13 @@ export function BottomNav() {
                       transition={{ type: "spring", damping: 25, stiffness: 300 }}
                     />
                   )}
-                  <Icon className={cn("h-5 w-5 relative z-10", active && "text-white")} />
+                  <Icon className={cn("h-5 w-5 relative z-10 shrink-0", active && "text-white")} />
                   {active && (
                     <motion.span
                       initial={{ opacity: 0, width: 0 }}
                       animate={{ opacity: 1, width: "auto" }}
                       exit={{ opacity: 0, width: 0 }}
-                      className="text-sm font-medium relative z-10 text-white"
+                      className="text-xs font-medium relative z-10 text-white truncate max-w-[4.5rem] sm:max-w-none"
                     >
                       {item.label}
                     </motion.span>
@@ -183,7 +183,7 @@ export function BottomNav() {
           >
             <motion.div
               className={cn(
-                "flex items-center gap-2 px-4 py-2.5 rounded-full transition-colors",
+                "flex items-center gap-1.5 px-2.5 py-2 rounded-full transition-colors shrink-0",
                 isExpanded
                   ? "text-primary-foreground"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -199,16 +199,16 @@ export function BottomNav() {
                 />
               )}
               {isExpanded ? (
-                <ChevronUp className="h-5 w-5 relative z-10 text-white" />
+                <ChevronUp className="h-5 w-5 relative z-10 text-white shrink-0" />
               ) : (
-                <MoreHorizontal className="h-5 w-5 relative z-10" />
+                <MoreHorizontal className="h-5 w-5 relative z-10 shrink-0" />
               )}
               {isExpanded && (
                 <motion.span
                   initial={{ opacity: 0, width: 0 }}
                   animate={{ opacity: 1, width: "auto" }}
                   exit={{ opacity: 0, width: 0 }}
-                  className="text-sm font-medium relative z-10 text-white"
+                  className="text-xs font-medium relative z-10 text-white"
                 >
                   More
                 </motion.span>
