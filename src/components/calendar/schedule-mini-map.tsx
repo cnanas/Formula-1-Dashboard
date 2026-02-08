@@ -2,8 +2,6 @@
 
 import { useTheme } from "next-themes";
 
-const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!;
-
 interface ScheduleMiniMapProps {
   longitude: number;
   latitude: number;
@@ -17,15 +15,16 @@ export function ScheduleMiniMap({
 }: ScheduleMiniMapProps) {
   const { resolvedTheme } = useTheme();
 
-  const style =
-    resolvedTheme === "dark" ? "mapbox/dark-v11" : "mapbox/light-v11";
-
-  const markerColor = "ef4444"; // red-500
-  const zoom = 3;
-  const width = 400;
-  const height = 180;
-
-  const url = `https://api.mapbox.com/styles/v1/${style}/static/pin-s+${markerColor}(${longitude},${latitude})/${longitude},${latitude},${zoom},0,0/${width}x${height}@2x?access_token=${MAPBOX_TOKEN}`;
+  const theme = resolvedTheme === "dark" ? "dark" : "light";
+  const params = new URLSearchParams({
+    lng: String(longitude),
+    lat: String(latitude),
+    theme,
+    width: "400",
+    height: "180",
+    zoom: "3",
+  });
+  const url = `/api/mapbox/static?${params.toString()}`;
 
   return (
     <img

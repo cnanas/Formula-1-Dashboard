@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useMemo } from "react";
+import { useRef, useEffect, useMemo, useState } from "react";
 import Map, { Marker, NavigationControl, AttributionControl } from "react-map-gl/mapbox";
 import { useTheme } from "next-themes";
 import { isPast } from "date-fns";
@@ -8,8 +8,6 @@ import { getCircuitCoordinates } from "@/lib/constants/circuit-coordinates";
 import type { Meeting } from "@/types/openf1";
 import type { MapRef } from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
-
-const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN!;
 
 const MAP_STYLES = {
   dark: "mapbox://styles/mapbox/dark-v11",
@@ -31,6 +29,15 @@ export function CalendarMapboxInner({
 }: CalendarMapboxInnerProps) {
   const mapRef = useRef<MapRef>(null);
   const { resolvedTheme } = useTheme();
+  const [mapboxToken, setMapboxToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/mapbox/token")
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("No token"))))
+      .then((data: { token: string }) => setMapboxToken(data.token))
+      .catch(() => setMapboxToken(""));
+  }, []);
+
   const mapStyle =
     resolvedTheme === "dark" ? MAP_STYLES.dark : MAP_STYLES.light;
 
@@ -64,10 +71,25 @@ export function CalendarMapboxInner({
     });
   }, [selectedMeetingKey, meetingsWithCoords]);
 
+  if (mapboxToken === null) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-muted/30 rounded-lg">
+        <p className="text-sm text-muted-foreground">Loading map…</p>
+      </div>
+    );
+  }
+  if (!mapboxToken) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-muted/30 rounded-lg">
+        <p className="text-sm text-muted-foreground">Map unavailable (no token)</p>
+      </div>
+    );
+  }
+
   return (
     <Map
       ref={mapRef}
-      mapboxAccessToken={MAPBOX_TOKEN}
+      mapboxAccessToken={mapboxToken}
       initialViewState={{
         longitude: 20,
         latitude: 30,

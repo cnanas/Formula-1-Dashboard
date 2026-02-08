@@ -5,6 +5,8 @@ import { format, isPast } from "date-fns";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Image from "next/image";
 import { getTrackLayout } from "@/lib/constants/track-layouts";
+import { getCircuitTheme } from "@/lib/constants/circuits";
+import { getCountryFlagCode } from "@/lib/constants/country-codes";
 import type { Meeting } from "@/types/openf1";
 
 interface RaceCarouselProps {
@@ -70,6 +72,10 @@ export function RaceCarousel({
             const isLive = startDate <= now && endDate >= now;
             const isSprint = sprintMeetingKeys.has(meeting.meeting_key);
             const trackLayout = getTrackLayout(meeting.circuit_short_name);
+            // Use circuit theme country code (2-letter) for flagcdn; fallback to API country_code
+            const flagCode =
+              getCircuitTheme(meeting.circuit_short_name).countryCode ||
+              getCountryFlagCode(meeting.country_code);
 
             return (
               <div
@@ -118,14 +124,23 @@ export function RaceCarousel({
 
                     {/* Country flag + name */}
                     <div className="flex items-center gap-2 mb-1">
-                      <Image
-                        src={`https://flagcdn.com/24x18/${meeting.country_code.toLowerCase()}.png`}
-                        alt={meeting.country_name}
-                        width={24}
-                        height={18}
-                        className="rounded-[2px] shadow-sm"
-                        unoptimized
-                      />
+                      {flagCode ? (
+                        <Image
+                          src={`https://flagcdn.com/24x18/${flagCode.toLowerCase()}.png`}
+                          alt={meeting.country_name}
+                          width={24}
+                          height={18}
+                          className="rounded-[2px] shadow-sm object-cover"
+                          unoptimized
+                        />
+                      ) : (
+                        <span
+                          className="flex h-[18px] w-6 items-center justify-center rounded-[2px] bg-muted text-[10px] font-medium text-muted-foreground"
+                          aria-hidden
+                        >
+                          ?
+                        </span>
+                      )}
                       <span className="text-base font-bold truncate">
                         {meeting.country_name}
                       </span>
