@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { usePathname } from "next/navigation";
-import { Radio, Pencil, Check, Calendar, ChevronDown, Users } from "lucide-react";
+import { Radio, Pencil, Check, Calendar, ChevronDown, Users, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSessionStatus } from "@/hooks/use-session-status";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +21,10 @@ import { useCircuitTheme } from "@/providers/circuit-theme-provider";
 import Image from "next/image";
 import { useOpenF1 } from "@/hooks/use-openf1";
 import { getTeamLogoUrl } from "@/lib/constants/team-logos";
+import { F1_APPLE_TV_US_URL } from "@/lib/constants/watch";
+import { getCircuitTheme } from "@/lib/constants/circuits";
+import { getCountryFlagCode } from "@/lib/constants/country-codes";
+import type { Session } from "@/types/openf1";
 
 const PAGE_TITLES: Record<string, string> = {
   "/": "Dashboard",
@@ -45,6 +49,33 @@ function getStaticPageTitle(pathname: string): string {
   if (pathname.startsWith("/tracks/")) return "Track History";
   if (pathname.startsWith("/teams/") && pathname !== "/teams") return "Teams";
   return "Dashboard";
+}
+
+function formatCountdown(targetDate: Date): string {
+  const now = new Date();
+  const diff = targetDate.getTime() - now.getTime();
+  if (diff <= 0) return "0d 0h 0m 0s";
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+  const minutes = Math.floor((diff / (1000 * 60)) % 60);
+  const seconds = Math.floor((diff / 1000) % 60);
+  const parts: string[] = [];
+  if (days > 0) parts.push(`${days}d`);
+  parts.push(`${hours}h`);
+  parts.push(`${minutes}m`);
+  parts.push(`${seconds}s`);
+  return parts.join(" ");
+}
+
+function HeaderCountdown({ targetDate }: { targetDate: Date }) {
+  const [str, setStr] = useState(() => formatCountdown(targetDate));
+  useEffect(() => {
+    const tick = () => setStr(formatCountdown(targetDate));
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [targetDate]);
+  return <span className="tabular-nums font-medium">{str}</span>;
 }
 
 export function Topbar() {
@@ -93,6 +124,29 @@ export function Topbar() {
 
   const { data: drivers } = useOpenF1("drivers", { session_key: sessionKey }, { enabled: !!sessionKey });
 
+  // Next race/event: upcoming meeting + first upcoming session
+  const { data: meetings } = useOpenF1("meetings", { year: season });
+  const upcomingMeeting = useMemo(() => {
+    const now = new Date();
+    return meetings.find((m) => new Date(m.date_end) > now);
+  }, [meetings]);
+  const { data: upcomingSessions } = useOpenF1(
+    "sessions",
+    { meeting_key: upcomingMeeting?.meeting_key?.toString() ?? "" },
+    { enabled: !!upcomingMeeting }
+  );
+  const nextSession = useMemo((): Session | null => {
+    const now = new Date();
+    const sorted = [...(upcomingSessions ?? [])].sort(
+      (a, b) => new Date(a.date_start).getTime() - new Date(b.date_start).getTime()
+    );
+    return sorted.find((s) => new Date(s.date_start) > now) ?? null;
+  }, [upcomingSessions]);
+  const nextSessionDate = useMemo(
+    () => (nextSession ? new Date(nextSession.date_start) : null),
+    [nextSession?.date_start]
+  );
+
   const teams = useMemo(() => {
     const names = [...new Set(drivers.map((d) => d.team_name).filter(Boolean))];
     return names.sort((a, b) => a.localeCompare(b));
@@ -118,7 +172,7 @@ export function Topbar() {
   }, [selectedTeam]);
 
   return (
-    <header className="sticky top-0 z-30 overflow-hidden">
+    <header className="sticky top-0 z-30">
       {/* Thin accent stripe - uses theme color when team/circuit theme is active */}
       <div
         className="h-0.5 w-full shrink-0 transition-colors duration-500"
@@ -129,7 +183,7 @@ export function Topbar() {
               : "linear-gradient(90deg, var(--primary) 0%, color-mix(in oklch, var(--primary) 70%, transparent) 100%)",
         }}
       />
-      <div className="flex h-14 items-center justify-between border-b border-border/60 bg-background/90 px-3 shadow-sm backdrop-blur-md sm:h-16 sm:px-6">
+      <div className="flex min-h-14 items-center justify-between border-b border-border/60 bg-background/90 px-3 py-2 shadow-sm backdrop-blur-md sm:min-h-16 sm:px-6">
         <div className="flex min-w-0 items-center gap-2 sm:gap-4">
           {/* Team selector: account-style box + dropdown (all breakpoints) */}
           {mounted ? (
@@ -137,7 +191,7 @@ export function Topbar() {
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="flex items-center gap-2.5 rounded-xl border border-border/60 bg-background/80 px-3 py-2 shadow-sm transition-colors hover:bg-muted/50 hover:border-border focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
+                  className="flex items-center gap-2.5 rounded-xl border border-border/60 bg-background/80 px-3 py-2 my-1.5 shadow-sm transition-colors hover:bg-muted/50 hover:border-border focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
                   aria-label="Select team"
                 >
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted">
@@ -211,7 +265,7 @@ export function Topbar() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <div className="flex items-center gap-2.5 rounded-xl border border-border/60 bg-background/80 px-3 py-2">
+            <div className="flex items-center gap-2.5 rounded-xl border border-border/60 bg-background/80 px-3 py-2 my-1.5">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted">
                 <Users className="h-4 w-4 text-muted-foreground" />
               </div>
@@ -226,15 +280,54 @@ export function Topbar() {
             </div>
           )}
 
-          {/* Live session indicator */}
+          {/* Live session indicator + Watch now (US: Apple TV) */}
           {isLive && latestSession && (
-            <Badge
-              variant="destructive"
-              className="ml-1 hidden shrink-0 items-center gap-1.5 animate-pulse rounded-full px-2.5 py-0.5 text-xs font-medium shadow-sm sm:flex"
-            >
-              <Radio className="h-3 w-3" />
-              LIVE: {latestSession.session_name}
-            </Badge>
+            <div className="ml-1 hidden shrink-0 items-center gap-1.5 sm:flex">
+              <Badge
+                variant="destructive"
+                className="animate-pulse rounded-full px-2.5 py-0.5 text-xs font-medium shadow-sm"
+              >
+                <Radio className="h-3 w-3" />
+                LIVE: {latestSession.session_name}
+              </Badge>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 gap-1 rounded-full border-red-500/50 bg-red-500/10 px-2.5 text-xs font-medium text-red-600 hover:bg-red-500/20 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                asChild
+              >
+                <a
+                  href={F1_APPLE_TV_US_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Watch on Apple TV (US)"
+                >
+                  <Play className="h-3 w-3" />
+                  Watch now
+                </a>
+              </Button>
+            </div>
+          )}
+
+          {/* Next race/event countdown: flag, circuit name, countdown (no Watch now when not live) */}
+          {!isLive && nextSession && nextSessionDate && (
+            <div className="ml-1 hidden shrink-0 items-center gap-2 rounded-lg border border-border/60 bg-muted/30 px-2.5 py-1.5 sm:flex">
+              <span className="relative h-4 w-5 shrink-0 overflow-hidden rounded-sm">
+                <Image
+                  src={`https://flagcdn.com/24x18/${(getCircuitTheme(nextSession.circuit_short_name).countryCode || getCountryFlagCode(nextSession.country_code)).toLowerCase()}.png`}
+                  alt=""
+                  width={24}
+                  height={18}
+                  className="object-cover"
+                  unoptimized
+                />
+              </span>
+              <span className="truncate text-xs font-medium text-foreground">
+                {nextSession.circuit_short_name}
+              </span>
+              <span className="text-muted-foreground">·</span>
+              <HeaderCountdown targetDate={nextSessionDate} />
+            </div>
           )}
         </div>
 
@@ -317,6 +410,48 @@ export function Topbar() {
           </div>
         </div>
       </div>
+
+      {/* Mobile-only: second row for countdown or live (full-width strip below main header) */}
+      {!isLive && nextSession && nextSessionDate && (
+        <div className="flex sm:hidden w-full items-center gap-2 border-t border-border/50 bg-muted/30 px-3 py-2">
+          <span className="relative h-4 w-5 shrink-0 overflow-hidden rounded-sm">
+            <Image
+              src={`https://flagcdn.com/24x18/${(getCircuitTheme(nextSession.circuit_short_name).countryCode || getCountryFlagCode(nextSession.country_code)).toLowerCase()}.png`}
+              alt=""
+              width={24}
+              height={18}
+              className="object-cover"
+              unoptimized
+            />
+          </span>
+          <span className="truncate text-xs font-medium text-foreground min-w-0">
+            {nextSession.circuit_short_name}
+          </span>
+          <span className="text-muted-foreground shrink-0">·</span>
+          <HeaderCountdown targetDate={nextSessionDate} />
+        </div>
+      )}
+      {isLive && latestSession && (
+        <div className="flex sm:hidden w-full items-center justify-between gap-2 border-t border-border/50 bg-red-500/10 px-3 py-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <Badge variant="destructive" className="shrink-0 animate-pulse rounded-full px-2 py-0.5 text-xs font-medium">
+              <Radio className="h-3 w-3" />
+              LIVE: {latestSession.session_name}
+            </Badge>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 shrink-0 gap-1 rounded-full border-red-500/50 bg-red-500/10 px-2.5 text-xs font-medium text-red-600 dark:text-red-400"
+            asChild
+          >
+            <a href={F1_APPLE_TV_US_URL} target="_blank" rel="noopener noreferrer" title="Watch on Apple TV (US)">
+              <Play className="h-3 w-3" />
+              Watch now
+            </a>
+          </Button>
+        </div>
+      )}
 
     </header>
   );

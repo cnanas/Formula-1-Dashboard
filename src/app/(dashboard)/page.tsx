@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { Radio } from "lucide-react";
+import { Radio, Play } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useSessionStatus } from "@/hooks/use-session-status";
 import { DashboardGrid } from "@/components/dashboard/dashboard-grid";
+import { F1_APPLE_TV_US_URL } from "@/lib/constants/watch";
 
 export default function DashboardHome() {
   const { isLive } = useSessionStatus();
@@ -13,17 +15,37 @@ export default function DashboardHome() {
     <div className="space-y-6">
       {/* Live session banner */}
       {isLive && (
-        <Link href="/live">
-          <Card className="border-red-500/50 bg-red-500/5 hover:bg-red-500/10 transition-colors cursor-pointer">
-            <CardContent className="flex items-center gap-3 py-4">
-              <Radio className="h-5 w-5 text-red-500 animate-pulse" />
+        <Card className="border-red-500/50 bg-red-500/5">
+          <CardContent className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <Radio className="h-5 w-5 shrink-0 text-red-500 animate-pulse" />
               <span className="font-medium">
-                A session is currently live! Click to view live timing and
-                telemetry.
+                A session is currently live! View live timing or watch on Apple
+                TV (US).
               </span>
-            </CardContent>
-          </Card>
-        </Link>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <Button variant="outline" size="sm" className="border-red-500/50" asChild>
+                <Link href="/live">Live timing</Link>
+              </Button>
+              <Button
+                size="sm"
+                className="bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700"
+                asChild
+              >
+                <a
+                  href={F1_APPLE_TV_US_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Watch on Apple TV (US)"
+                >
+                  <Play className="h-4 w-4" />
+                  Watch now
+                </a>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Widget Grid */}

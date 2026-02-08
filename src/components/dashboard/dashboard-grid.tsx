@@ -7,7 +7,6 @@ import {
   MapPin,
   Trophy,
   Award,
-  Timer,
   Radio,
   Newspaper,
   Calendar,
@@ -28,7 +27,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { WidgetWrapper } from "./widget-wrapper";
-import { CountdownWidget } from "./widgets/countdown-widget";
 import { StandingsWidget } from "./widgets/standings-widget";
 import { ConstructorStandingsWidget } from "./widgets/constructor-standings-widget";
 import { LiveStatusWidget } from "./widgets/live-status-widget";
@@ -82,14 +80,6 @@ const WIDGET_REGISTRY: Record<
     icon: Award,
     component: ConstructorStandingsWidget,
     defaultSize: { w: 4, h: 7 },
-  },
-  countdown: {
-    title: "Next Race",
-    component: CountdownWidget,
-    icon: Timer,
-    defaultSize: { w: 4, h: 3 },
-    noHeader: true,
-    className: "bg-transparent border-0 shadow-none",
   },
   "live-status": {
     title: "Live Session",
