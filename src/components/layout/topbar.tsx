@@ -140,9 +140,94 @@ export function Topbar() {
       />
       <div className="flex h-14 items-center justify-between border-b border-border/60 bg-background/90 px-3 shadow-sm backdrop-blur-md sm:h-16 sm:px-6">
         <div className="flex min-w-0 items-center gap-2 sm:gap-4">
-          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+          {/* Mobile: title/team name is the team selector trigger */}
+          <div className="flex min-w-0 sm:hidden">
+            {mounted ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex min-w-0 items-center gap-2 rounded-lg p-1 -ml-1 text-left hover:bg-muted/50 active:bg-muted transition-colors w-full"
+                    aria-label="Select team"
+                  >
+                    {selectedTeam && teamLogoUrl && !logoError ? (
+                      <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-md bg-muted">
+                        <Image
+                          src={teamLogoUrl}
+                          alt=""
+                          width={32}
+                          height={32}
+                          className="object-contain p-0.5"
+                          unoptimized
+                          onError={() => setLogoError(true)}
+                        />
+                      </div>
+                    ) : null}
+                    <div className="flex min-w-0 flex-col gap-0">
+                      <span className="flex items-center gap-1 truncate text-base font-semibold tracking-tight text-foreground">
+                        {selectedTeam ?? "All teams"}
+                        <ChevronDown className="h-4 w-4 shrink-0 opacity-60" />
+                      </span>
+                      <span className="truncate text-xs text-muted-foreground">
+                        {pageTitle}
+                      </span>
+                    </div>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="max-h-[70vh] overflow-y-auto w-56">
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setSelectedTeam(null);
+                      resetToDefault();
+                    }}
+                  >
+                    <Users className="h-4 w-4 mr-2 text-muted-foreground" />
+                    All teams
+                  </DropdownMenuItem>
+                  {teams.map((team) => (
+                    <DropdownMenuItem
+                      key={team}
+                      onClick={() => {
+                        setSelectedTeam(team);
+                        setTeamTheme(team);
+                      }}
+                    >
+                      <span className="flex items-center gap-2">
+                        {getTeamLogoUrl(team) ? (
+                          <span className="relative h-5 w-5 shrink-0 overflow-hidden rounded">
+                            <Image
+                              src={getTeamLogoUrl(team)!}
+                              alt=""
+                              width={20}
+                              height={20}
+                              className="object-contain"
+                              unoptimized
+                            />
+                          </span>
+                        ) : (
+                          <span className="h-5 w-5 rounded bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground shrink-0">
+                            {team.slice(0, 2)}
+                          </span>
+                        )}
+                        {team}
+                      </span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <div className="flex min-w-0 flex-col gap-0 py-1">
+                <span className="truncate text-base font-semibold tracking-tight text-foreground">
+                  {selectedTeam ? `${selectedTeam} · ${pageTitle}` : pageTitle}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Desktop: title + optional logo (not a trigger) */}
+          <div className="hidden sm:flex min-w-0 items-center gap-2 sm:gap-3">
             {selectedTeam && (
-              <div className="relative hidden h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted sm:flex">
+              <div className="relative h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted flex">
                 {teamLogoUrl && !logoError ? (
                   <Image
                     src={teamLogoUrl}
@@ -165,7 +250,7 @@ export function Topbar() {
                 {selectedTeam ? `${selectedTeam} · ${pageTitle}` : pageTitle}
               </h1>
               {subtitle && (
-                <span className="hidden truncate text-xs text-muted-foreground sm:block">
+                <span className="truncate text-xs text-muted-foreground">
                   {subtitle}
                 </span>
               )}

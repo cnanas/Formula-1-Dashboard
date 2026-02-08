@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Palette, Check, RotateCcw, PanelBottom, PanelLeft } from "lucide-react";
+import { useTheme } from "next-themes";
+import { Palette, Check, RotateCcw, PanelBottom, PanelLeft, Sun, Moon, Monitor } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -20,6 +21,7 @@ import { CIRCUIT_THEMES } from "@/lib/constants/circuits";
 
 export function ThemeSelector() {
   const [mounted, setMounted] = useState(false);
+  const { theme: appTheme, setTheme: setAppTheme } = useTheme();
   const {
     theme,
     themeMode,
@@ -29,7 +31,6 @@ export function ThemeSelector() {
     resetToDefault,
     availableTeams,
   } = useCircuitTheme();
-  
   const { mode: navMode, setMode: setNavMode } = useNavigationMode();
 
   // Prevent hydration mismatch
@@ -58,6 +59,30 @@ export function ThemeSelector() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuLabel>Appearance</DropdownMenuLabel>
+        <DropdownMenuItem onClick={() => setAppTheme("light")} className="flex items-center justify-between">
+          <span className="flex items-center gap-2">
+            <Sun className="h-4 w-4" />
+            Light
+          </span>
+          {appTheme === "light" && <Check className="h-4 w-4 text-primary" />}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setAppTheme("dark")} className="flex items-center justify-between">
+          <span className="flex items-center gap-2">
+            <Moon className="h-4 w-4" />
+            Dark
+          </span>
+          {appTheme === "dark" && <Check className="h-4 w-4 text-primary" />}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setAppTheme("system")} className="flex items-center justify-between">
+          <span className="flex items-center gap-2">
+            <Monitor className="h-4 w-4" />
+            System
+          </span>
+          {appTheme === "system" && <Check className="h-4 w-4 text-primary" />}
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator />
         <DropdownMenuLabel>Theme</DropdownMenuLabel>
         <DropdownMenuSeparator />
 
