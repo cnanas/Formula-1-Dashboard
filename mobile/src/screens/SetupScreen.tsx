@@ -8,13 +8,18 @@ import {
   Alert,
   RefreshControl,
 } from "react-native";
+import { RaceRecordsList } from "../components/RaceRecordsList";
+import { RaceRecordDetailScreen } from "./RaceRecordDetailScreen";
+import type { RaceRecord } from "../lib/types";
 
 interface SetupScreenProps {
   localIp: string | null;
   listening: boolean;
   error: string | null;
   connected?: boolean;
+  raceRecords?: RaceRecord[];
   onRefreshIp: () => void;
+  onClearHistory?: () => Promise<void> | void;
   onViewTelemetry?: () => void;
 }
 
@@ -23,10 +28,19 @@ export function SetupScreen({
   listening,
   error,
   connected = false,
+  raceRecords = [],
   onRefreshIp,
+  onClearHistory,
   onViewTelemetry,
 }: SetupScreenProps) {
   const [refreshing, setRefreshing] = React.useState(false);
+  const [clearingHistory, setClearingHistory] = React.useState(false);
+  const [selectedRaceRecord, setSelectedRaceRecord] = React.useState<RaceRecord | null>(null);
+  const showBackToTelemetry = connected && onViewTelemetry != null;
+  const raceRecordsWithLaps = raceRecords.filter(
+    (record) => record.laps.length > 0
+  );
+  const hasHistory = raceRecordsWithLaps.length > 0;
 
   const handleCopyIp = () => {
     if (localIp) {
@@ -44,6 +58,36 @@ export function SetupScreen({
     setRefreshing(false);
   };
 
+  const handleClearHistory = () => {
+    if (!onClearHistory || clearingHistory || !hasHistory) return;
+    Alert.alert(
+      "Delete historical records?",
+      "This will remove all saved sessions and lap telemetry from this device.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            setClearingHistory(true);
+            Promise.resolve(onClearHistory()).finally(() => {
+              setClearingHistory(false);
+            });
+          },
+        },
+      ]
+    );
+  };
+
+  if (selectedRaceRecord != null) {
+    return (
+      <RaceRecordDetailScreen
+        record={selectedRaceRecord}
+        onBack={() => setSelectedRaceRecord(null)}
+      />
+    );
+  }
+
   return (
     <ScrollView
       style={styles.container}
@@ -52,7 +96,23 @@ export function SetupScreen({
         <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
       }
     >
-      <Text style={styles.title}>F1 Game Telemetry</Text>
+      <View style={styles.headerRow}>
+        {showBackToTelemetry ? (
+          <View style={styles.headerRowWithBack}>
+            <TouchableOpacity
+              style={styles.backBtn}
+              onPress={onViewTelemetry}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.backBtnText}>‹ Back</Text>
+            </TouchableOpacity>
+            <Text style={styles.title}>F1 Game Telemetry</Text>
+            <View style={styles.backBtnPlaceholder} />
+          </View>
+        ) : (
+          <Text style={styles.titleSolo}>F1 Game Telemetry</Text>
+        )}
+      </View>
 
       {error && (
         <View style={styles.errorBox}>
@@ -99,6 +159,21 @@ export function SetupScreen({
         <Text style={styles.instruction}>5. Set UDP Port to 20777</Text>
         <Text style={styles.instruction}>6. Set UDP Format to 2024 or 2025</Text>
         <Text style={styles.instruction}>7. Enter a session (Practice, Qualifying, or Race)</Text>
+        {onClearHistory && (
+          <TouchableOpacity
+            style={[
+              styles.clearHistoryBtn,
+              (!hasHistory || clearingHistory) && styles.clearHistoryBtnDisabled,
+            ]}
+            onPress={handleClearHistory}
+            disabled={!hasHistory || clearingHistory}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.clearHistoryBtnText}>
+              {clearingHistory ? "Deleting…" : "Delete historical records"}
+            </Text>
+          </TouchableOpacity>
+        )}
         {connected && onViewTelemetry && (
           <TouchableOpacity
             style={styles.viewTelemetryBtn}
@@ -108,6 +183,15 @@ export function SetupScreen({
           </TouchableOpacity>
         )}
       </View>
+
+      {raceRecordsWithLaps.length > 0 && (
+        <RaceRecordsList
+          raceRecords={raceRecordsWithLaps}
+          title="Past sessions"
+          maxHeight={320}
+          onRecordPress={(record) => setSelectedRaceRecord(record)}
+        />
+      )}
     </ScrollView>
   );
 }
@@ -115,27 +199,58 @@ export function SetupScreen({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0a0a0a",
+    backgroundColor: "#f2f2f7",
   },
   content: {
     padding: 24,
+    paddingTop: 48,
     paddingBottom: 48,
   },
+  headerRow: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 24,
+  },
+  headerRowWithBack: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  backBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    minWidth: 72,
+  },
+  backBtnText: {
+    fontSize: 17,
+    color: "#007aff",
+    fontWeight: "600",
+  },
+  backBtnPlaceholder: {
+    minWidth: 72,
+  },
   title: {
+    flex: 1,
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#1c1c1e",
+    textAlign: "center",
+  },
+  titleSolo: {
     fontSize: 24,
     fontWeight: "700",
-    color: "#fff",
-    marginBottom: 24,
+    color: "#1c1c1e",
     textAlign: "center",
   },
   errorBox: {
-    backgroundColor: "rgba(239, 68, 68, 0.2)",
+    backgroundColor: "rgba(255, 59, 48, 0.12)",
     padding: 12,
     borderRadius: 8,
     marginBottom: 16,
   },
   errorText: {
-    color: "#ef4444",
+    color: "#d70015",
     fontSize: 14,
   },
   ipSection: {
@@ -143,25 +258,25 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    color: "#a1a1aa",
+    color: "#6e6e73",
     marginBottom: 8,
   },
   ipBox: {
-    backgroundColor: "#18181b",
+    backgroundColor: "#ffffff",
     padding: 20,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#27272a",
+    borderColor: "#d1d1d6",
   },
   ipText: {
     fontSize: 28,
     fontWeight: "700",
-    color: "#22c55e",
+    color: "#007aff",
     fontFamily: "monospace",
   },
   tapHint: {
     fontSize: 12,
-    color: "#71717a",
+    color: "#8e8e93",
     marginTop: 4,
   },
   statusRow: {
@@ -176,39 +291,39 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   statusDotActive: {
-    backgroundColor: "#22c55e",
+    backgroundColor: "#34c759",
   },
   statusDotInactive: {
-    backgroundColor: "#71717a",
+    backgroundColor: "#8e8e93",
   },
   statusText: {
     fontSize: 14,
-    color: "#a1a1aa",
+    color: "#6e6e73",
   },
   instructions: {
-    backgroundColor: "#18181b",
+    backgroundColor: "#ffffff",
     padding: 20,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#27272a",
+    borderColor: "#d1d1d6",
   },
   instructionsTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#fff",
+    color: "#1c1c1e",
     marginBottom: 16,
   },
   instruction: {
     fontSize: 14,
-    color: "#a1a1aa",
+    color: "#3a3a3c",
     marginBottom: 8,
     lineHeight: 22,
   },
   viewTelemetryBtn: {
-    marginTop: 20,
+    marginTop: 12,
     paddingVertical: 12,
     paddingHorizontal: 20,
-    backgroundColor: "#22c55e",
+    backgroundColor: "#007aff",
     borderRadius: 8,
     alignSelf: "flex-start",
   },
@@ -216,5 +331,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "#fff",
+  },
+  clearHistoryBtn: {
+    marginTop: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#ff3b30",
+    backgroundColor: "rgba(255, 59, 48, 0.08)",
+    alignSelf: "flex-start",
+  },
+  clearHistoryBtnDisabled: {
+    borderColor: "#d1d1d6",
+    backgroundColor: "#f2f2f7",
+  },
+  clearHistoryBtnText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#d70015",
   },
 });
