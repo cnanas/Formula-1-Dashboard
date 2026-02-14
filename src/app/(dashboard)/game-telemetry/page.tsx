@@ -47,9 +47,17 @@ export default function GameTelemetryPage() {
           <CardContent className="space-y-4 text-sm text-muted-foreground">
             <ol className="list-decimal list-inside space-y-2">
               <li>
-                <strong className="text-foreground">On your PC</strong> (same machine where you will open this page): open a terminal in this project and run{" "}
-                <code className="rounded bg-muted px-1.5 py-0.5 text-xs">npm run relay</code> or{" "}
-                <code className="rounded bg-muted px-1.5 py-0.5 text-xs">node scripts/telemetry-relay.js</code>. Leave the terminal open.
+                <strong className="text-foreground">Start the relay</strong> (same machine where you will open this page):
+                <ul className="list-disc list-inside mt-1.5 ml-2 space-y-0.5 text-muted-foreground">
+                  <li>
+                    <strong className="text-foreground">Easiest:</strong> open this project folder and double-click{" "}
+                    <code className="rounded bg-muted px-1.5 py-0.5 text-xs">run-relay.command</code> (Mac) or{" "}
+                    <code className="rounded bg-muted px-1.5 py-0.5 text-xs">run-relay.bat</code> (Windows). Keep that window open.
+                  </li>
+                  <li>
+                    Or in a terminal: <code className="rounded bg-muted px-1.5 py-0.5 text-xs">npm run relay</code>
+                  </li>
+                </ul>
               </li>
               <li>
                 <strong className="text-foreground">Open this dashboard</strong> in your browser on that same PC (this URL or localhost).
