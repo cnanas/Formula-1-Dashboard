@@ -13,11 +13,21 @@ export default function GameTelemetryPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Game Telemetry</h1>
-        <Badge variant={connected ? "default" : "secondary"}>
-          {connected ? "Connected" : "Disconnected"}
-        </Badge>
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold">Game Telemetry</h1>
+          <Badge
+            variant={connected ? (data ? "default" : "secondary") : "secondary"}
+            className={connected && data ? "" : "font-normal"}
+          >
+            {connected ? (data ? "Live" : "Relay connected") : "Disconnected"}
+          </Badge>
+        </div>
+        {connected && !data && (
+          <p className="text-sm text-muted-foreground">
+            Connected to the relay. Start your F1 game and enter a session to see live data.
+          </p>
+        )}
       </div>
 
       {error && (
@@ -67,6 +77,11 @@ export default function GameTelemetryPage() {
               </li>
               <li>
                 When you <strong className="text-foreground">finish your session or race</strong>, a summary card will appear here with your position, best lap, total time, and more.
+              </li>
+              <li>
+                <strong className="text-foreground">Discord (optional):</strong> add{" "}
+                <code className="rounded bg-muted px-1.5 py-0.5 text-xs">DISCORD_WEBHOOK_URL</code> to a{" "}
+                <code className="rounded bg-muted px-1.5 py-0.5 text-xs">.env</code> file in this project, then restart the relay. The relay will post that same summary to your Discord channel after each session.
               </li>
             </ol>
           </CardContent>

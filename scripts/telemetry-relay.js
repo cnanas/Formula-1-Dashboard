@@ -3,12 +3,18 @@
  * F1 Game Telemetry Relay
  * Listens for UDP telemetry on port 20777, serves WebSocket on port 20978.
  * Sends live telemetry and, at session end, a session summary (final classification).
+ * Optional: set DISCORD_WEBHOOK_URL (env or .env) to post the summary to a Discord channel.
  * Run: node scripts/telemetry-relay.js
- * Requires: npm install ws @deltazeroproduction/f1-udp-parser
+ * Requires: npm install ws @deltazeroproduction/f1-udp-parser dotenv
  */
+
+const path = require("path");
+require("dotenv").config({ path: path.resolve(__dirname, "..", ".env") });
 
 const { F1TelemetryClient, constants } = require("@deltazeroproduction/f1-udp-parser");
 const { WebSocketServer } = require("ws");
+
+const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL || null;
 
 const UDP_PORT = 20777;
 const WS_PORT = 20978;
@@ -58,6 +64,51 @@ function msToTime(ms) {
   const min = Math.floor(totalSec / 60);
   const sec = (totalSec % 60).toFixed(3);
   return `${min}:${sec.padStart(6, "0")}`;
+}
+
+function positionLabel(pos) {
+  if (pos === 1) return "1st";
+  if (pos === 2) return "2nd";
+  if (pos === 3) return "3rd";
+  return `${pos}th`;
+}
+
+function postSummaryToDiscord(summary) {
+  if (!DISCORD_WEBHOOK_URL || typeof fetch !== "function") return;
+  const fields = [
+    { name: "Position", value: positionLabel(summary.position), inline: true },
+    { name: "Track", value: summary.trackName, inline: true },
+    { name: "Session", value: summary.sessionType, inline: true },
+    { name: "Laps", value: `${summary.numLaps} / ${summary.totalLaps}`, inline: true },
+    { name: "Best lap", value: summary.bestLapTimeFormatted, inline: true },
+    { name: "Total time", value: summary.totalRaceTimeFormatted, inline: true },
+  ];
+  if (summary.numPitStops > 0) {
+    fields.push({ name: "Pit stops", value: String(summary.numPitStops), inline: true });
+  }
+  if (summary.points > 0) {
+    fields.push({ name: "Points", value: `+${summary.points}`, inline: true });
+  }
+  if (summary.numPenalties > 0 || (summary.penaltiesTime && summary.penaltiesTime > 0)) {
+    const pen = summary.penaltiesTime
+      ? `${summary.numPenalties} (${(summary.penaltiesTime / 1000).toFixed(1)}s)`
+      : String(summary.numPenalties);
+    fields.push({ name: "Penalties", value: pen, inline: true });
+  }
+  const body = JSON.stringify({
+    embeds: [
+      {
+        title: "🏁 Session summary",
+        color: 0xe10600, // F1 red
+        fields,
+      },
+    ],
+  });
+  fetch(DISCORD_WEBHOOK_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body,
+  }).catch((err) => console.error("Discord webhook error:", err.message));
 }
 
 client.on(constants.PACKETS.carTelemetry, (packet) => {
@@ -133,6 +184,7 @@ client.on(constants.PACKETS.finalClassification, (packet) => {
     numPenalties: c.m_numPenalties ?? 0,
     resultStatus: c.m_resultStatus ?? 0,
   };
+  if (DISCORD_WEBHOOK_URL) postSummaryToDiscord(sessionSummary);
 });
 
 function buildPayload() {
@@ -156,4 +208,9 @@ wss.on("connection", (ws) => {
 client.start();
 console.log(`F1 Telemetry Relay: UDP ${UDP_PORT} -> WebSocket ${WS_PORT}`);
 console.log("Session summary will be sent when the race/session ends (final classification).");
+if (DISCORD_WEBHOOK_URL) {
+  console.log("Discord: session summaries will be posted to your webhook.");
+} else {
+  console.log("Optional: set DISCORD_WEBHOOK_URL in .env to post summaries to Discord.");
+}
 console.log("Configure your F1 game to send UDP telemetry to this machine's IP.");
