@@ -49,7 +49,7 @@ export default function GameTelemetryPage() {
         />
       )}
 
-      {!connected && (
+      {(!connected || !data) && (
         <Card>
           <CardHeader>
             <CardTitle className="text-base">How to use Game Telemetry (web)</CardTitle>
