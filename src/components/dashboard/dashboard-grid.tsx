@@ -24,6 +24,7 @@ import {
   Gamepad2,
   BarChart3,
   Youtube,
+  ScrollText,
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -49,6 +50,7 @@ import { TeamProfileWidget } from "./widgets/team-profile-widget";
 import { GameSetupsWidget } from "./widgets/game-setups-widget";
 import { LatestSessionWidget } from "./widgets/latest-session-widget";
 import { YoutubeWidget } from "./widgets/youtube-widget";
+import { RaceRecapWidget } from "./widgets/race-recap-widget";
 import { useDashboardEdit } from "@/providers/dashboard-edit-provider";
 
 import "react-grid-layout/css/styles.css";
@@ -198,6 +200,13 @@ const WIDGET_REGISTRY: Record<
     icon: BarChart3,
     component: LatestSessionWidget,
     defaultSize: { w: 4, h: 7 },
+  },
+  "race-recap": {
+    title: "Race Recap",
+    subtitle: "Latest Grand Prix",
+    icon: ScrollText,
+    component: RaceRecapWidget,
+    defaultSize: { w: 4, h: 5 },
   },
 };
 

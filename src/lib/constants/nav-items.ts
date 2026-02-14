@@ -12,6 +12,7 @@ import {
   MapPin,
   Gamepad2,
   BarChart3,
+  ScrollText,
 } from "lucide-react";
 
 export interface NavItem {
@@ -25,6 +26,7 @@ export interface NavItem {
 export const DEFAULT_NAV_ORDER: string[] = [
   "home",
   "weekend",
+  "recap",
   "live",
   "calendar",
   "game-setups",
@@ -40,6 +42,7 @@ export const DEFAULT_NAV_ORDER: string[] = [
 export const NAV_ITEMS: Record<string, NavItem> = {
   home: { id: "home", label: "Home", href: "/", icon: Home },
   weekend: { id: "weekend", label: "Weekend", href: "/weekend", icon: Flag },
+  recap: { id: "recap", label: "Recap", href: "/recap", icon: ScrollText },
   live: { id: "live", label: "Live", href: "/live", icon: Radio },
   calendar: { id: "calendar", label: "Calendar", href: "/calendar", icon: Calendar },
   standings: { id: "standings", label: "Standings", href: "/standings", icon: Trophy },

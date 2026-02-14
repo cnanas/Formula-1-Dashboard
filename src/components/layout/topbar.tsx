@@ -30,6 +30,7 @@ import type { Session } from "@/types/openf1";
 const PAGE_TITLES: Record<string, string> = {
   "/": "Dashboard",
   "/weekend": "Weekend Hub",
+  "/recap": "Race Recap",
   "/live": "Live Session",
   "/live/map": "Track Map",
   "/calendar": "Calendar",
