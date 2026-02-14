@@ -31,6 +31,11 @@ function toText(value: unknown): string {
   return "";
 }
 
+function toRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object") return null;
+  return value as Record<string, unknown>;
+}
+
 function extractVideoId(entry: Record<string, unknown>): string {
   const ytVideoId = toText(entry["yt:videoId"]);
   if (ytVideoId) return ytVideoId;
@@ -42,7 +47,9 @@ function extractVideoId(entry: Record<string, unknown>): string {
 
   const links = toArray(entry.link as Record<string, unknown> | undefined);
   for (const link of links) {
-    const href = toText(link["@_href"]);
+    const linkRecord = toRecord(link);
+    if (!linkRecord) continue;
+    const href = toText(linkRecord["@_href"]);
     if (!href) continue;
     try {
       const url = new URL(href);
@@ -59,8 +66,10 @@ function extractVideoId(entry: Record<string, unknown>): string {
 function extractVideoUrl(entry: Record<string, unknown>, videoId: string): string {
   const links = toArray(entry.link as Record<string, unknown> | undefined);
   for (const link of links) {
-    const href = toText(link["@_href"]);
-    const rel = toText(link["@_rel"]);
+    const linkRecord = toRecord(link);
+    if (!linkRecord) continue;
+    const href = toText(linkRecord["@_href"]);
+    const rel = toText(linkRecord["@_rel"]);
     if (!href) continue;
     if (!rel || rel === "alternate") return href;
   }
@@ -108,7 +117,9 @@ export function parseYoutubeFeed(
       };
     }
 
-    const entries = toArray(feed.entry as Record<string, unknown> | undefined);
+    const entries = toArray<Record<string, unknown>>(
+      feed.entry as Record<string, unknown> | undefined
+    );
     const feedChannelId = toText(feed["yt:channelId"]);
     const entryChannelId = toText(entries[0]?.["yt:channelId"]);
     const channelId =

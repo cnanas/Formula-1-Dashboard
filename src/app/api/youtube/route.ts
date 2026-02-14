@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
   const limit = parseLimit(request.nextUrl.searchParams.get("limit"));
   const channelId =
     channelIdFromQuery ??
-    normalizeChannelId(process.env.YOUTUBE_CHANNEL_ID) ??
+    normalizeChannelId(process.env.YOUTUBE_CHANNEL_ID ?? null) ??
     DEFAULT_F1_CHANNEL_ID;
   const feedUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${encodeURIComponent(
     channelId
