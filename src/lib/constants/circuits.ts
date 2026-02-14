@@ -1,3 +1,5 @@
+import { normalizeTeamName } from "./team-names";
+
 // Circuit data with colors and themes for dynamic backgrounds
 export interface CircuitTheme {
   id: string;
@@ -290,12 +292,7 @@ export const TEAM_COLORS: Record<string, { primary: string; secondary: string; a
     secondary: "#041e42",
     accent: "#ffffff",
   },
-  RB: {
-    primary: "#6692ff",
-    secondary: "#1e3a5f",
-    accent: "#ffffff",
-  },
-  "Racing Bull": {
+  "Racing Bulls": {
     primary: "#6692ff",
     secondary: "#1e3a5f",
     accent: "#ffffff",
@@ -305,9 +302,19 @@ export const TEAM_COLORS: Record<string, { primary: string; secondary: string; a
     secondary: "#000000",
     accent: "#ffffff",
   },
-  Haas: {
+  "Haas F1 Team": {
     primary: "#b6babd",
     secondary: "#e10600",
+    accent: "#ffffff",
+  },
+  Audi: {
+    primary: "#dc0000",
+    secondary: "#000000",
+    accent: "#ffffff",
+  },
+  Cadillac: {
+    primary: "#002856",
+    secondary: "#c8102e",
     accent: "#ffffff",
   },
 };
@@ -377,5 +384,6 @@ export function getCircuitTheme(circuitName: string): CircuitTheme {
 }
 
 export function getTeamColors(teamName: string) {
-  return TEAM_COLORS[teamName] || { primary: "#666666", secondary: "#333333", accent: "#ffffff" };
+  const normalized = normalizeTeamName(teamName);
+  return TEAM_COLORS[normalized] || TEAM_COLORS[teamName] || { primary: "#666666", secondary: "#333333", accent: "#ffffff" };
 }

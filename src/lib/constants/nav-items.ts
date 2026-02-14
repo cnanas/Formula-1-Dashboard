@@ -1,14 +1,14 @@
 import type { LucideIcon } from "lucide-react";
 import {
   Home,
+  Flag,
   Radio,
   Calendar,
   Trophy,
   Newspaper,
-  GitCompareArrows,
-  CircleDot,
+  BookOpenText,
+  Youtube,
   Gauge,
-  CloudSun,
   MapPin,
   Gamepad2,
   BarChart3,
@@ -21,35 +21,35 @@ export interface NavItem {
   icon: LucideIcon;
 }
 
-// Default order: Home, Live, Calendar, Game Setups, News, Standings, Track History, Compare, Pit Stops, Weather, Game Telemetry (last)
+// Default order for bottom navigation
 export const DEFAULT_NAV_ORDER: string[] = [
   "home",
+  "weekend",
   "live",
   "calendar",
   "game-setups",
   "news",
+  "youtube",
+  "glossary",
   "standings",
   "track-history",
   "sessions",
-  "compare",
-  "pitstops",
-  "weather",
   "game-telemetry",
 ];
 
 export const NAV_ITEMS: Record<string, NavItem> = {
   home: { id: "home", label: "Home", href: "/", icon: Home },
+  weekend: { id: "weekend", label: "Weekend", href: "/weekend", icon: Flag },
   live: { id: "live", label: "Live", href: "/live", icon: Radio },
   calendar: { id: "calendar", label: "Calendar", href: "/calendar", icon: Calendar },
   standings: { id: "standings", label: "Standings", href: "/standings", icon: Trophy },
   "game-telemetry": { id: "game-telemetry", label: "Game Telemetry", href: "/game-telemetry", icon: Gauge },
   "game-setups": { id: "game-setups", label: "Game Setups", href: "/setups", icon: Gamepad2 },
   news: { id: "news", label: "News", href: "/news", icon: Newspaper },
+  youtube: { id: "youtube", label: "YouTube", href: "/youtube", icon: Youtube },
+  glossary: { id: "glossary", label: "Glossary", href: "/glossary", icon: BookOpenText },
   "track-history": { id: "track-history", label: "Track History", href: "/tracks", icon: MapPin },
   sessions: { id: "sessions", label: "Sessions", href: "/sessions", icon: BarChart3 },
-  compare: { id: "compare", label: "Compare", href: "/compare", icon: GitCompareArrows },
-  pitstops: { id: "pitstops", label: "Pit Stops", href: "/pitstops", icon: CircleDot },
-  weather: { id: "weather", label: "Weather", href: "/weather", icon: CloudSun },
 };
 
 const STORAGE_KEY = "f1dash_nav_order_v1";

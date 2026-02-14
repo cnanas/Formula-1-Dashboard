@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { LayoutList, Zap, Gauge, Flag, AlertTriangle, Info } from "lucide-react";
 import { useOpenF1 } from "@/hooks/use-openf1";
@@ -17,6 +17,19 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FLAG_COLORS } from "@/lib/constants/flags";
 import { cn } from "@/lib/utils";
+import {
+  getLatestCompletedGrandPrixRaceSession,
+  hasUsableDriverProfiles,
+} from "@/lib/api/session-selection";
+
+function firstNonEmptyText(...values: Array<string | null | undefined>): string | null {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim().length > 0) {
+      return value;
+    }
+  }
+  return null;
+}
 
 export function LatestSessionWidget() {
   const { season } = useSeason();
@@ -48,15 +61,39 @@ export function LatestSessionWidget() {
     year: season,
   });
 
-  // Fallback to previous year if no sessions in current year
-  const { data: prevYearSessions, isLoading: prevYearLoading } = useOpenF1(
+  // Used only as metadata fallback (names/teams) when testing sessions have null profiles.
+  const { data: seasonRaceSessions, isLoading: seasonRaceSessionsLoading } = useOpenF1(
     "sessions",
-    { year: season - 1 },
-    { enabled: !sessionsLoading && sessions.length === 0 }
+    { year: season, session_type: "Race" },
+    { enabled: !sessionsLoading }
   );
 
-  const allSessions = sessions.length > 0 ? sessions : prevYearSessions;
-  const effectiveSeason = sessions.length > 0 ? season : season - 1;
+  const latestCompletedSeasonRace = useMemo(
+    () => getLatestCompletedGrandPrixRaceSession(seasonRaceSessions),
+    [seasonRaceSessions]
+  );
+
+  const fallbackProfileSeason =
+    latestCompletedSeasonRace == null && season > 2023 ? season - 1 : null;
+
+  const { data: previousSeasonRaceSessions } = useOpenF1(
+    "sessions",
+    { year: fallbackProfileSeason ?? 0, session_type: "Race" },
+    { enabled: fallbackProfileSeason != null }
+  );
+
+  const latestCompletedFallbackRace = useMemo(
+    () => getLatestCompletedGrandPrixRaceSession(previousSeasonRaceSessions),
+    [previousSeasonRaceSessions]
+  );
+
+  const profileFallbackSessionKey = (
+    latestCompletedSeasonRace ??
+    latestCompletedFallbackRace
+  )?.session_key?.toString();
+
+  const allSessions = sessions;
+  const effectiveSeason = season;
 
   const startedSessions = useMemo(() => {
     const now = new Date();
@@ -90,6 +127,23 @@ export function LatestSessionWidget() {
     { enabled: !!sessionKey }
   );
 
+  const hasSessionDriverProfiles = useMemo(
+    () => hasUsableDriverProfiles(drivers),
+    [drivers]
+  );
+
+  const { data: profileFallbackDrivers, isLoading: profileFallbackDriversLoading } = useOpenF1(
+    "drivers",
+    { session_key: profileFallbackSessionKey },
+    {
+      enabled:
+        !!sessionKey &&
+        !!profileFallbackSessionKey &&
+        !driversLoading &&
+        !hasSessionDriverProfiles,
+    }
+  );
+
   const { data: laps } = useOpenF1(
     "laps",
     { session_key: sessionKey },
@@ -117,6 +171,30 @@ export function LatestSessionWidget() {
   const driverMap = useMemo(
     () => new Map(drivers.map((d) => [d.driver_number, d])),
     [drivers]
+  );
+
+  const profileFallbackDriverMap = useMemo(
+    () => new Map(profileFallbackDrivers.map((d) => [d.driver_number, d])),
+    [profileFallbackDrivers]
+  );
+
+  const getDriverDisplay = useCallback(
+    (driverNumber: number) => {
+      const driver = driverMap.get(driverNumber);
+      const fallback = profileFallbackDriverMap.get(driverNumber);
+      return {
+        name:
+          firstNonEmptyText(
+            driver?.full_name,
+            driver?.broadcast_name,
+            fallback?.full_name,
+            fallback?.broadcast_name
+          ) ?? `#${driverNumber}`,
+        teamName:
+          firstNonEmptyText(driver?.team_name, fallback?.team_name) ?? "Unknown",
+      };
+    },
+    [driverMap, profileFallbackDriverMap]
   );
 
   // Fastest driver per sector (single fastest time for S1, S2, S3)
@@ -181,13 +259,13 @@ export function LatestSessionWidget() {
       const ranked = [...results]
         .sort((a, b) => a.position - b.position)
         .map((result) => {
-          const driver = driverMap.get(result.driver_number);
+          const driverDisplay = getDriverDisplay(result.driver_number);
           const summary = lapSummary.get(result.driver_number);
           return {
             position: result.position,
             driverNumber: result.driver_number,
-            driverName: driver?.full_name ?? driver?.broadcast_name ?? `#${result.driver_number}`,
-            teamName: driver?.team_name ?? "Unknown",
+            driverName: driverDisplay.name,
+            teamName: driverDisplay.teamName,
             bestLap: summary?.bestLap ?? null,
             laps: summary?.laps ?? result.number_of_laps ?? 0,
           };
@@ -207,11 +285,11 @@ export function LatestSessionWidget() {
 
     const ranked = Array.from(lapSummary.entries())
       .map(([driverNumber, summary]) => {
-        const driver = driverMap.get(driverNumber);
+        const driverDisplay = getDriverDisplay(driverNumber);
         return {
           driverNumber,
-          driverName: driver?.full_name ?? driver?.broadcast_name ?? `#${driverNumber}`,
-          teamName: driver?.team_name ?? "Unknown",
+          driverName: driverDisplay.name,
+          teamName: driverDisplay.teamName,
           bestLap: summary.bestLap,
           laps: summary.laps,
         };
@@ -231,36 +309,36 @@ export function LatestSessionWidget() {
       gapToFastest:
         fastestLap != null && row.bestLap != null ? Math.max(0, row.bestLap - fastestLap) : null,
     }));
-  }, [laps, results, driverMap]);
+  }, [laps, results, getDriverDisplay]);
 
   const sectorCardRows = useMemo(
     () =>
       fastestSectors.map((entry) => {
-        const driver = driverMap.get(entry.driver_number);
+        const driverDisplay = getDriverDisplay(entry.driver_number);
         return {
           sector: entry.sector,
           driverNumber: entry.driver_number,
-          driverName: driver?.full_name ?? driver?.broadcast_name ?? `#${entry.driver_number}`,
-          teamName: driver?.team_name ?? "Unknown",
+          driverName: driverDisplay.name,
+          teamName: driverDisplay.teamName,
           sectorTime: entry.time,
         };
       }),
-    [fastestSectors, driverMap]
+    [fastestSectors, getDriverDisplay]
   );
 
   const speedCardRows = useMemo(
     () =>
       speedTrapTop10.map((entry, index) => {
-        const driver = driverMap.get(entry.driver_number);
+        const driverDisplay = getDriverDisplay(entry.driver_number);
         return {
           position: index + 1,
           driverNumber: entry.driver_number,
-          driverName: driver?.full_name ?? driver?.broadcast_name ?? `#${entry.driver_number}`,
-          teamName: driver?.team_name ?? "Unknown",
+          driverName: driverDisplay.name,
+          teamName: driverDisplay.teamName,
           speed: entry.speed,
         };
       }),
-    [speedTrapTop10, driverMap]
+    [speedTrapTop10, getDriverDisplay]
   );
 
   const topSpeed = useMemo(() => speedTrapTop10[0] ?? null, [speedTrapTop10]);
@@ -294,7 +372,11 @@ export function LatestSessionWidget() {
     [raceControl]
   );
 
-  const isLoading = sessionsLoading || prevYearLoading || driversLoading;
+  const isLoading =
+    sessionsLoading ||
+    seasonRaceSessionsLoading ||
+    driversLoading ||
+    (!hasSessionDriverProfiles && profileFallbackDriversLoading);
 
   if (isLoading) {
     return (

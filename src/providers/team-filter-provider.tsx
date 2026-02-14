@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useCallback, useEffect } from "react";
+import { normalizeTeamName } from "@/lib/constants/team-names";
 
 const STORAGE_KEY = "f1dash_team_filter";
 
@@ -26,7 +27,7 @@ export function TeamFilterProvider({ children }: { children: React.ReactNode }) 
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored && stored.length > 0) {
-        setSelectedTeamState(stored);
+        setSelectedTeamState(normalizeTeamName(stored));
       }
     } catch {
       // Ignore
@@ -34,10 +35,11 @@ export function TeamFilterProvider({ children }: { children: React.ReactNode }) 
   }, []);
 
   const setSelectedTeam = useCallback((team: string | null) => {
-    setSelectedTeamState(team);
+    const normalizedTeam = team ? normalizeTeamName(team) : null;
+    setSelectedTeamState(normalizedTeam);
     try {
-      if (team) {
-        localStorage.setItem(STORAGE_KEY, team);
+      if (normalizedTeam) {
+        localStorage.setItem(STORAGE_KEY, normalizedTeam);
       } else {
         localStorage.removeItem(STORAGE_KEY);
       }

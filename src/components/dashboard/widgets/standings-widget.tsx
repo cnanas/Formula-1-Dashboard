@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { normalizeTeamName } from "@/lib/constants/team-names";
 
 // Position badge colors
 function getPositionBadgeStyle(position: number) {
@@ -88,7 +89,7 @@ export function StandingsWidget() {
   const isDriverFromSelectedTeam = useMemo(() => {
     if (!teamFilter) return () => false;
     return (driverNumber: number) =>
-      driverMap.get(driverNumber)?.team_name === teamFilter;
+      normalizeTeamName(driverMap.get(driverNumber)?.team_name ?? "") === teamFilter;
   }, [teamFilter, driverMap]);
 
   return (

@@ -1,3 +1,5 @@
+import { normalizeTeamName } from "./team-names";
+
 /**
  * F1 team dashboard/livery image paths.
  * Maps OpenF1 team names to dashboard image paths in public/Teams.
@@ -14,16 +16,14 @@ export const TEAM_LIVERIES: Record<string, string> = {
   "Aston Martin": "/Teams/Aston Martin/2026-reveal-dashboard.png",
   Alpine: "/Teams/Alpine/alpine-dashboard.png",
   Williams: "/Teams/Williams/williams-dashboard.png",
-  RB: "/Teams/Racing Bulls/racing-bulls-dashboard.png",
-  "Racing Bull": "/Teams/Racing Bulls/racing-bulls-dashboard.png",
-  "Visa Cash App RB": "/Teams/Racing Bulls/racing-bulls-dashboard.png",
+  "Racing Bulls": "/Teams/Racing Bulls/racing-bulls-dashboard.png",
   "Kick Sauber": "/Teams/Audi/audi-dashboard.png",
-  Haas: "/Teams/Haas/haas-dashboard.png",
   "Haas F1 Team": "/Teams/Haas/haas-dashboard.png",
   Audi: "/Teams/Audi/audi-dashboard.png",
   Cadillac: "/Teams/Cadillac/2026-reveal-dashboard.png",
 };
 
 export function getTeamLiveryUrl(teamName: string): string {
-  return TEAM_LIVERIES[teamName] ?? PLACEHOLDER_LIVERY;
+  const normalized = normalizeTeamName(teamName);
+  return TEAM_LIVERIES[normalized] ?? TEAM_LIVERIES[teamName] ?? PLACEHOLDER_LIVERY;
 }

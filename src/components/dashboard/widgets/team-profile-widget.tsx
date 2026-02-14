@@ -22,6 +22,12 @@ import { getTeamColor } from "@/lib/utils/colors";
 import { getTeamLogoUrl } from "@/lib/constants/team-logos";
 import { getTeamLiveryUrl } from "@/lib/constants/team-liveries";
 import { getTeamCarModel } from "@/lib/constants/team-car-models";
+import { normalizeTeamName } from "@/lib/constants/team-names";
+import {
+  getLatestCompletedGrandPrixRaceSession,
+  getLatestStartedSession,
+  hasUsableDriverProfiles,
+} from "@/lib/api/session-selection";
 
 const STORAGE_KEY = "f1-dashboard-favorite-team";
 
@@ -48,47 +54,19 @@ export function TeamProfileWidget() {
     year: season,
   });
 
-  // Resolve drivers from the latest started session that has driver entries.
-  const candidateSessions = useMemo(() => {
-    const now = new Date();
-    return [...sessions]
-      .filter((s) => new Date(s.date_start) < now)
-      .sort((a, b) => new Date(b.date_start).getTime() - new Date(a.date_start).getTime())
-      .slice(0, 3);
-  }, [sessions]);
+  const latestStartedSession = useMemo(() => getLatestStartedSession(sessions), [sessions]);
+  const latestStartedSessionKey = latestStartedSession?.session_key?.toString();
 
-  const candidateSessionKey0 = candidateSessions[0]?.session_key?.toString();
-  const candidateSessionKey1 = candidateSessions[1]?.session_key?.toString();
-  const candidateSessionKey2 = candidateSessions[2]?.session_key?.toString();
-
-  const { data: candidateDrivers0, isLoading: candidateDrivers0Loading } = useOpenF1(
+  const { data: seasonDrivers, isLoading: seasonDriversLoading } = useOpenF1(
     "drivers",
-    { session_key: candidateSessionKey0 },
-    { enabled: !!candidateSessionKey0 }
-  );
-  const { data: candidateDrivers1, isLoading: candidateDrivers1Loading } = useOpenF1(
-    "drivers",
-    { session_key: candidateSessionKey1 },
-    { enabled: !!candidateSessionKey1 }
-  );
-  const { data: candidateDrivers2, isLoading: candidateDrivers2Loading } = useOpenF1(
-    "drivers",
-    { session_key: candidateSessionKey2 },
-    { enabled: !!candidateSessionKey2 }
+    { session_key: latestStartedSessionKey },
+    { enabled: !!latestStartedSessionKey }
   );
 
-  const resolvedSessionIndex = useMemo(() => {
-    const pools = [candidateDrivers0, candidateDrivers1, candidateDrivers2];
-    const idx = pools.findIndex((d) => d.length > 0);
-    return idx >= 0 ? idx : 0;
-  }, [candidateDrivers0, candidateDrivers1, candidateDrivers2]);
-
-  const drivers = useMemo(() => {
-    if (resolvedSessionIndex === 0) return candidateDrivers0;
-    if (resolvedSessionIndex === 1) return candidateDrivers1;
-    if (resolvedSessionIndex === 2) return candidateDrivers2;
-    return [];
-  }, [candidateDrivers0, candidateDrivers1, candidateDrivers2, resolvedSessionIndex]);
+  const hasSeasonDriverProfiles = useMemo(
+    () => hasUsableDriverProfiles(seasonDrivers),
+    [seasonDrivers]
+  );
 
   // Standings are most reliable via the latest completed race session for the selected season.
   const { data: raceSessions, isLoading: raceSessionsLoading } = useOpenF1(
@@ -97,18 +75,39 @@ export function TeamProfileWidget() {
     { enabled: !sessionsLoading }
   );
 
-  const latestCompletedRaceSession = useMemo(() => {
-    const now = new Date().getTime();
-    return [...raceSessions]
-      .filter((s) => {
-        const end = s.date_end ? new Date(s.date_end).getTime() : NaN;
-        const effectiveEnd = Number.isFinite(end) ? end : new Date(s.date_start).getTime();
-        return effectiveEnd <= now;
-      })
-      .sort((a, b) => new Date(b.date_start).getTime() - new Date(a.date_start).getTime())[0];
-  }, [raceSessions]);
+  const latestCompletedRaceSession = useMemo(
+    () => getLatestCompletedGrandPrixRaceSession(raceSessions),
+    [raceSessions]
+  );
 
-  const standingsSessionKey = latestCompletedRaceSession?.session_key?.toString();
+  const fallbackSeason = useMemo(() => {
+    if (latestCompletedRaceSession) return null;
+    return availableSeasons.find((year) => year < season) ?? null;
+  }, [latestCompletedRaceSession, season, availableSeasons]);
+
+  const { data: fallbackRaceSessions, isLoading: fallbackRaceSessionsLoading } = useOpenF1(
+    "sessions",
+    { year: fallbackSeason ?? 0, session_type: "Race" },
+    { enabled: !!fallbackSeason }
+  );
+
+  const fallbackRaceSession = useMemo(
+    () => getLatestCompletedGrandPrixRaceSession(fallbackRaceSessions),
+    [fallbackRaceSessions]
+  );
+
+  const standingsSessionKey = (
+    latestCompletedRaceSession ??
+    fallbackRaceSession
+  )?.session_key?.toString();
+
+  const { data: fallbackDrivers, isLoading: fallbackDriversLoading } = useOpenF1(
+    "drivers",
+    { session_key: standingsSessionKey },
+    { enabled: !!standingsSessionKey && !seasonDriversLoading && !hasSeasonDriverProfiles }
+  );
+
+  const drivers = hasSeasonDriverProfiles ? seasonDrivers : fallbackDrivers;
 
   const { data: constructorStandings, isLoading: constructorStandingsLoading } = useOpenF1(
     "championship_teams",
@@ -127,10 +126,16 @@ export function TeamProfileWidget() {
 
   // Get unique teams
   const teams = useMemo(() => {
-    const teamNames = new Set(drivers.map((d) => d.team_name));
+    const teamNames = new Set(
+      drivers.map((driver) => normalizeTeamName(driver.team_name)).filter(Boolean)
+    );
     return Array.from(teamNames).sort((a, b) => {
-      const aStanding = allConstructorStandings.find((s) => s.team_name === a);
-      const bStanding = allConstructorStandings.find((s) => s.team_name === b);
+      const aStanding = allConstructorStandings.find(
+        (standing) => normalizeTeamName(standing.team_name) === a
+      );
+      const bStanding = allConstructorStandings.find(
+        (standing) => normalizeTeamName(standing.team_name) === b
+      );
       return (aStanding?.position_current ?? 99) - (bStanding?.position_current ?? 99);
     });
   }, [drivers, allConstructorStandings]);
@@ -141,7 +146,7 @@ export function TeamProfileWidget() {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
-        setSelectedTeam(saved);
+        setSelectedTeam(normalizeTeamName(saved));
       }
     } catch {
       // Ignore localStorage errors
@@ -172,9 +177,10 @@ export function TeamProfileWidget() {
 
   // Save team selection
   const handleTeamChange = (value: string) => {
-    setSelectedTeam(value);
+    const normalized = normalizeTeamName(value);
+    setSelectedTeam(normalized);
     try {
-      localStorage.setItem(STORAGE_KEY, value);
+      localStorage.setItem(STORAGE_KEY, normalized);
     } catch {
       // Ignore localStorage errors
     }
@@ -182,19 +188,21 @@ export function TeamProfileWidget() {
 
   const isLoading =
     sessionsLoading ||
-    candidateDrivers0Loading ||
-    candidateDrivers1Loading ||
-    candidateDrivers2Loading ||
+    seasonDriversLoading ||
     raceSessionsLoading ||
+    fallbackRaceSessionsLoading ||
+    fallbackDriversLoading ||
     constructorStandingsLoading ||
     driverStandingsLoading;
 
   const teamStanding = useMemo(() => {
-    return allConstructorStandings.find((t) => t.team_name === selectedTeam);
+    return allConstructorStandings.find(
+      (standing) => normalizeTeamName(standing.team_name) === selectedTeam
+    );
   }, [allConstructorStandings, selectedTeam]);
 
   const teamDrivers = useMemo(() => {
-    return drivers.filter((d) => d.team_name === selectedTeam);
+    return drivers.filter((driver) => normalizeTeamName(driver.team_name) === selectedTeam);
   }, [drivers, selectedTeam]);
 
   const teamDriverStandings = useMemo(() => {
@@ -252,7 +260,9 @@ export function TeamProfileWidget() {
             </SelectTrigger>
             <SelectContent>
               {teams.map((team) => {
-                const standing = allConstructorStandings.find((s) => s.team_name === team);
+                const standing = allConstructorStandings.find(
+                  (entry) => normalizeTeamName(entry.team_name) === team
+                );
                 return (
                   <SelectItem key={team} value={team}>
                     {standing ? `P${standing.position_current} - ` : ""}{team}

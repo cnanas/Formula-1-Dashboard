@@ -24,10 +24,12 @@ import { getTeamLogoUrl } from "@/lib/constants/team-logos";
 import { F1_APPLE_TV_US_URL } from "@/lib/constants/watch";
 import { getCircuitTheme } from "@/lib/constants/circuits";
 import { getCountryFlagCode } from "@/lib/constants/country-codes";
+import { normalizeTeamName } from "@/lib/constants/team-names";
 import type { Session } from "@/types/openf1";
 
 const PAGE_TITLES: Record<string, string> = {
   "/": "Dashboard",
+  "/weekend": "Weekend Hub",
   "/live": "Live Session",
   "/live/map": "Track Map",
   "/calendar": "Calendar",
@@ -35,9 +37,8 @@ const PAGE_TITLES: Record<string, string> = {
   "/teams": "Teams",
   "/standings": "Standings",
   "/news": "News",
-  "/compare": "Head to Head",
-  "/pitstops": "Pit Stop Analytics",
-  "/weather": "Weather",
+  "/youtube": "YouTube",
+  "/glossary": "Glossary",
   "/history": "History",
 };
 
@@ -189,7 +190,7 @@ export function Topbar() {
   }, [nextSessionDate]);
 
   const teams = useMemo(() => {
-    const names = [...new Set(drivers.map((d) => d.team_name).filter(Boolean))];
+    const names = [...new Set(drivers.map((d) => normalizeTeamName(d.team_name)).filter(Boolean))];
     return names.sort((a, b) => a.localeCompare(b));
   }, [drivers]);
 

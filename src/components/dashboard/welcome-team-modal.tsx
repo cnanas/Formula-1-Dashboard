@@ -15,7 +15,7 @@ import { TEAM_LOGOS } from "@/lib/constants/team-logos";
 
 const STORAGE_KEY = "f1dash_welcome_seen";
 
-// Unique teams to show (avoid duplicates like RB/Racing Bull/Visa Cash App RB)
+// Unique teams to show (normalized names to match OpenF1 team filter values)
 const WELCOME_TEAMS = [
   "Red Bull Racing",
   "McLaren",
@@ -24,9 +24,9 @@ const WELCOME_TEAMS = [
   "Aston Martin",
   "Alpine",
   "Williams",
-  "RB",
+  "Racing Bulls",
   "Kick Sauber",
-  "Haas",
+  "Haas F1 Team",
   "Audi",
   "Cadillac",
 ] as const;

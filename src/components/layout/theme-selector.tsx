@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useCircuitTheme } from "@/providers/circuit-theme-provider";
 import { useNavigationMode } from "@/providers/navigation-mode-provider";
-import { CIRCUIT_THEMES } from "@/lib/constants/circuits";
+import { CIRCUIT_THEMES, getTeamColors } from "@/lib/constants/circuits";
 
 export function ThemeSelector() {
   const [mounted, setMounted] = useState(false);
@@ -217,25 +217,12 @@ export function ThemeSelector() {
 }
 
 function TeamColorDot({ teamName }: { teamName: string }) {
-  const { availableTeams } = useCircuitTheme();
-  // Get team colors from the constants
-  const teamColors: Record<string, string> = {
-    "Red Bull Racing": "#3671c6",
-    McLaren: "#ff8000",
-    Ferrari: "#e8002d",
-    Mercedes: "#27f4d2",
-    "Aston Martin": "#229971",
-    Alpine: "#ff87bc",
-    Williams: "#64c4ff",
-    RB: "#6692ff",
-    "Kick Sauber": "#52e252",
-    Haas: "#b6babd",
-  };
+  const colors = getTeamColors(teamName);
 
   return (
     <span
       className="h-3 w-3 rounded-full"
-      style={{ backgroundColor: teamColors[teamName] || "#666" }}
+      style={{ backgroundColor: colors.primary }}
     />
   );
 }

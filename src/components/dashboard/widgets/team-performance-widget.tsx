@@ -12,8 +12,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { getTeamColor } from "@/lib/utils/colors";
+import { normalizeTeamName } from "@/lib/constants/team-names";
+import { getLatestCompletedGrandPrixRaceSession } from "@/lib/api/session-selection";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
 
 interface PerformanceData {
   wins: number;
@@ -79,17 +80,25 @@ export function TeamPerformanceWidget() {
     prevGlobalSeasonRef.current = globalSeason;
   }, [globalSeason]);
 
-  // Get sessions for selected season
-  const { data: sessions, isLoading: sessionsLoading } = useOpenF1("sessions", {
+  const { data: raceSessions, isLoading: raceSessionsLoading } = useOpenF1("sessions", {
     year: season,
+    session_type: "Race",
   });
 
-  // Get the latest race session
-  const latestRaceSession = sessions
-    .filter((s) => s.session_type === "Race" && new Date(s.date_start) < new Date())
-    .sort((a, b) => new Date(b.date_start).getTime() - new Date(a.date_start).getTime())[0];
+  const latestRaceSession = getLatestCompletedGrandPrixRaceSession(raceSessions);
 
-  const sessionKey = latestRaceSession?.session_key?.toString();
+  const fallbackSeason = latestRaceSession
+    ? null
+    : availableSeasons.find((year) => year < season) ?? null;
+
+  const { data: fallbackRaceSessions, isLoading: fallbackRaceSessionsLoading } = useOpenF1(
+    "sessions",
+    { year: fallbackSeason ?? 0, session_type: "Race" },
+    { enabled: !!fallbackSeason }
+  );
+
+  const fallbackRaceSession = getLatestCompletedGrandPrixRaceSession(fallbackRaceSessions);
+  const sessionKey = (latestRaceSession ?? fallbackRaceSession)?.session_key?.toString();
 
   // Get drivers for team info
   const { data: drivers, isLoading: driversLoading } = useOpenF1(
@@ -97,12 +106,6 @@ export function TeamPerformanceWidget() {
     { session_key: sessionKey },
     { enabled: !!sessionKey }
   );
-
-  // Get all race results for the season
-  const { data: allSessions } = useOpenF1("sessions", {
-    year: season,
-    session_type: "Race",
-  });
 
   // Get championship standings for sorting teams
   const { data: standings } = useOpenF1(
@@ -112,11 +115,10 @@ export function TeamPerformanceWidget() {
   );
 
   // Get unique teams sorted by championship position
-  const teams = [...new Set(drivers.map((d) => d.team_name))]
-    .filter(Boolean)
+  const teams = [...new Set(drivers.map((d) => normalizeTeamName(d.team_name)).filter(Boolean))]
     .sort((a, b) => {
-      const aStanding = standings.find((s) => s.team_name === a);
-      const bStanding = standings.find((s) => s.team_name === b);
+      const aStanding = standings.find((s) => normalizeTeamName(s.team_name) === a);
+      const bStanding = standings.find((s) => normalizeTeamName(s.team_name) === b);
       return (aStanding?.position_current ?? 99) - (bStanding?.position_current ?? 99);
     });
   const currentTeam = selectedTeam || teams[0] || "";
@@ -129,10 +131,10 @@ export function TeamPerformanceWidget() {
   }, [teamFilter, teams]);
 
   // Get team color
-  const teamDriver = drivers.find((d) => d.team_name === currentTeam);
+  const teamDriver = drivers.find((d) => normalizeTeamName(d.team_name) === currentTeam);
   const teamColor = getTeamColor(teamDriver?.team_colour ?? null);
 
-  const teamStanding = standings.find((s) => s.team_name === currentTeam);
+  const teamStanding = standings.find((s) => normalizeTeamName(s.team_name) === currentTeam);
   
   // Simulated performance data based on points
   // In production, you'd calculate this from actual race results
@@ -159,7 +161,7 @@ export function TeamPerformanceWidget() {
     1
   );
 
-  const isLoading = sessionsLoading || driversLoading;
+  const isLoading = raceSessionsLoading || fallbackRaceSessionsLoading || driversLoading;
 
   if (isLoading) {
     return (

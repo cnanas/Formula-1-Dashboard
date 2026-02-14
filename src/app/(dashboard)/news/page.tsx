@@ -10,9 +10,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PageSkeleton } from "@/components/shared/loading-skeleton";
 import { EmptyState } from "@/components/shared/empty-state";
+import { DataReliability } from "@/components/shared/data-reliability";
 import type { RSSFeed } from "@/types/rss";
 
 const SOURCES = ["All", "Formula 1", "Autosport", "Motorsport.com", "The Race", "RaceFans"];
+const REFRESH_INTERVAL_MS = 300_000;
+
+interface RSSFeedError {
+  error: string;
+}
 
 // Source-specific colors for badges
 const SOURCE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
@@ -31,13 +37,15 @@ export default function NewsPage() {
   const [activeSource, setActiveSource] = useState("All");
   const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
 
-  const { data, isLoading } = useSWR<RSSFeed>("/api/rss?source=all", {
-    refreshInterval: 300_000, // 5 minutes
+  const { data, isLoading, isValidating, mutate } = useSWR<RSSFeed | RSSFeedError>("/api/rss?source=all", {
+    refreshInterval: REFRESH_INTERVAL_MS, // 5 minutes
   });
+  const apiError = data && "error" in data ? data.error : null;
+  const feed = data && "items" in data ? data : null;
 
   if (isLoading) return <PageSkeleton />;
 
-  const items = data?.items ?? [];
+  const items = feed?.items ?? [];
   const filtered =
     activeSource === "All"
       ? items
@@ -49,6 +57,18 @@ export default function NewsPage() {
 
   return (
     <div className="space-y-6">
+      <DataReliability
+        sourceLabel="News feed"
+        isLoading={isLoading}
+        isRefreshing={isValidating}
+        error={apiError}
+        lastUpdated={feed?.lastFetched}
+        refreshIntervalMs={REFRESH_INTERVAL_MS}
+        onRefresh={() => {
+          void mutate();
+        }}
+      />
+
       {/* Source filters */}
       <div className="flex flex-wrap gap-2">
         {SOURCES.map((source) => {
@@ -73,7 +93,11 @@ export default function NewsPage() {
         <EmptyState
           icon={Newspaper}
           title="No articles found"
-          description="Try selecting a different source or check back later."
+          description={
+            apiError
+              ? "The feed is currently unavailable. Try refreshing in a moment."
+              : "Try selecting a different source or check back later."
+          }
         />
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

@@ -10,6 +10,7 @@ import { TeamCard } from "@/components/teams/team-card";
 import { PageSkeleton } from "@/components/shared/loading-skeleton";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Badge } from "@/components/ui/badge";
+import { normalizeTeamName } from "@/lib/constants/team-names";
 
 export default function TeamsPage() {
   const { season, availableSeasons } = useSeason();
@@ -61,7 +62,7 @@ export default function TeamsPage() {
     if (!drivers?.length) return [];
     const byTeam = new Map<string, typeof drivers>();
     for (const d of drivers) {
-      const name = d.team_name;
+      const name = normalizeTeamName(d.team_name);
       if (!name) continue;
       if (!byTeam.has(name)) byTeam.set(name, []);
       byTeam.get(name)!.push(d);
@@ -70,7 +71,9 @@ export default function TeamsPage() {
       .map(([teamName, teamDrivers]) => ({
         teamName,
         drivers: teamDrivers,
-        standing: constructorStandings?.find((s) => s.team_name === teamName),
+        standing: constructorStandings?.find(
+          (standing) => normalizeTeamName(standing.team_name) === teamName
+        ),
       }))
       .sort(
         (a, b) =>

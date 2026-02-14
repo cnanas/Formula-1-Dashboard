@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
 import { DynamicBackground } from "@/components/layout/dynamic-background";
 import { BottomNav, DesktopBottomNav } from "@/components/layout/bottom-nav";
+import { ChangelogModal } from "@/components/layout/changelog-modal";
 import { WelcomeTeamModal } from "@/components/dashboard/welcome-team-modal";
 import { useSidebar } from "@/providers/sidebar-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -24,6 +25,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     <>
       <DynamicBackground />
       <WelcomeTeamModal />
+      <ChangelogModal />
 
       <div className="relative flex min-h-screen min-w-0 overflow-x-hidden">
         {mode === "sidebar" && (

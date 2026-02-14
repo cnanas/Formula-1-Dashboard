@@ -15,6 +15,8 @@ import { AnimatedCounter } from "@/components/ui/animated-counter";
 import { PageSkeleton } from "@/components/shared/loading-skeleton";
 import { EmptyState } from "@/components/shared/empty-state";
 import { getTeamColor } from "@/lib/utils/colors";
+import { getLatestCompletedGrandPrixRaceSession } from "@/lib/api/session-selection";
+import { normalizeTeamName } from "@/lib/constants/team-names";
 
 export default function DriverProfilePage({
   params,
@@ -22,7 +24,7 @@ export default function DriverProfilePage({
   params: Promise<{ driverNumber: string }>;
 }) {
   const { driverNumber } = use(params);
-  const { season } = useSeason();
+  const { season, availableSeasons } = useSeason();
   const { setPageTitle, clearPageTitle } = usePageTitle();
 
   // Get sessions for the season to find the latest one
@@ -31,14 +33,30 @@ export default function DriverProfilePage({
     session_type: "Race",
   });
 
-  // Find the most recent completed race session
-  const latestSession = useMemo(() => {
-    return sessions
-      .filter((s) => new Date(s.date_start) < new Date())
-      .sort((a, b) => new Date(b.date_start).getTime() - new Date(a.date_start).getTime())[0];
-  }, [sessions]);
+  const latestSession = useMemo(
+    () => getLatestCompletedGrandPrixRaceSession(sessions),
+    [sessions]
+  );
 
-  const sessionKey = latestSession?.session_key?.toString();
+  const fallbackSeason = useMemo(() => {
+    if (latestSession) return null;
+    return availableSeasons.find((year) => year < season) ?? null;
+  }, [availableSeasons, latestSession, season]);
+
+  const { data: fallbackSessions, isLoading: fallbackSessionsLoading } = useOpenF1(
+    "sessions",
+    { year: fallbackSeason ?? 0, session_type: "Race" },
+    { enabled: !!fallbackSeason }
+  );
+
+  const fallbackSession = useMemo(
+    () => getLatestCompletedGrandPrixRaceSession(fallbackSessions),
+    [fallbackSessions]
+  );
+
+  const resolvedSession = latestSession ?? fallbackSession;
+  const resolvedSeason = latestSession ? season : fallbackSeason ?? season;
+  const sessionKey = resolvedSession?.session_key?.toString();
 
   // Get driver info
   const { data: drivers, isLoading: driversLoading } = useOpenF1(
@@ -64,7 +82,7 @@ export default function DriverProfilePage({
 
   // Get all race results for the season
   const { data: allSessions } = useOpenF1("sessions", {
-    year: season,
+    year: resolvedSeason,
     session_type: "Race",
   });
 
@@ -74,14 +92,13 @@ export default function DriverProfilePage({
       .map((s) => s.session_key);
   }, [allSessions]);
 
-  // Get meetings for race names
-  const { data: meetings } = useOpenF1("meetings", { year: season });
-
   // Get teammate for comparison
   const teammate = useMemo(() => {
     if (!driver) return null;
     return drivers.find(
-      (d) => d.team_name === driver.team_name && d.driver_number !== driver.driver_number
+      (d) =>
+        normalizeTeamName(d.team_name) === normalizeTeamName(driver.team_name) &&
+        d.driver_number !== driver.driver_number
     );
   }, [drivers, driver]);
 
@@ -98,7 +115,7 @@ export default function DriverProfilePage({
     return () => clearPageTitle();
   }, [driver, setPageTitle, clearPageTitle]);
 
-  const isLoading = sessionsLoading || driversLoading || standingsLoading;
+  const isLoading = sessionsLoading || fallbackSessionsLoading || driversLoading || standingsLoading;
 
   if (isLoading) return <PageSkeleton />;
 
@@ -114,7 +131,7 @@ export default function DriverProfilePage({
         <EmptyState
           icon={Users}
           title="Driver not found"
-          description={`No driver found with number ${driverNumber} for the ${season} season.`}
+          description={`No driver found with number ${driverNumber} for the ${resolvedSeason} season.`}
         />
       </div>
     );
@@ -299,7 +316,7 @@ export default function DriverProfilePage({
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Season</p>
-                  <p className="text-2xl font-bold">{season}</p>
+                  <p className="text-2xl font-bold">{resolvedSeason}</p>
                 </div>
               </div>
             </CardContent>

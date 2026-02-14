@@ -2,13 +2,12 @@
 
 import Link from "next/link";
 import {
+  Flag,
   Radio,
   Trophy,
   Calendar,
   Newspaper,
-  GitCompareArrows,
-  CircleDot,
-  CloudSun,
+  BookOpenText,
   History,
   MapPin,
   type LucideIcon,
@@ -23,13 +22,12 @@ interface QuickLink {
 }
 
 const links: QuickLink[] = [
+  { label: "Weekend Hub", href: "/weekend", icon: Flag, color: "text-rose-500", bgColor: "bg-rose-500/10" },
   { label: "Live", href: "/live", icon: Radio, color: "text-red-500", bgColor: "bg-red-500/10" },
   { label: "Standings", href: "/standings", icon: Trophy, color: "text-yellow-500", bgColor: "bg-yellow-500/10" },
   { label: "Calendar", href: "/calendar", icon: Calendar, color: "text-blue-500", bgColor: "bg-blue-500/10" },
   { label: "News", href: "/news", icon: Newspaper, color: "text-green-500", bgColor: "bg-green-500/10" },
-  { label: "Compare", href: "/compare", icon: GitCompareArrows, color: "text-orange-500", bgColor: "bg-orange-500/10" },
-  { label: "Pit Stops", href: "/pitstops", icon: CircleDot, color: "text-cyan-500", bgColor: "bg-cyan-500/10" },
-  { label: "Weather", href: "/weather", icon: CloudSun, color: "text-sky-500", bgColor: "bg-sky-500/10" },
+  { label: "Glossary", href: "/glossary", icon: BookOpenText, color: "text-violet-500", bgColor: "bg-violet-500/10" },
   { label: "History", href: "/history", icon: History, color: "text-amber-500", bgColor: "bg-amber-500/10" },
   { label: "Track Map", href: "/live/map", icon: MapPin, color: "text-teal-500", bgColor: "bg-teal-500/10" },
 ];
