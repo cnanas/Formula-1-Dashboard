@@ -15,3 +15,23 @@ export interface GameTelemetryCarData {
   speed: number;
   throttle: number;
 }
+
+/** Session/race summary sent by the relay when final classification is received. */
+export interface SessionSummary {
+  final: boolean;
+  sessionType: string;
+  trackName: string;
+  totalLaps: number;
+  position: number;
+  gridPosition: number;
+  numLaps: number;
+  bestLapTimeMs: number | null;
+  bestLapTimeFormatted: string;
+  totalRaceTimeMs?: number | null;
+  totalRaceTimeFormatted: string;
+  numPitStops: number;
+  points: number;
+  penaltiesTime: number;
+  numPenalties: number;
+  resultStatus: number;
+}

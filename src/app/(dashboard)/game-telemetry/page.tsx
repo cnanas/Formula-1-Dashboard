@@ -5,10 +5,11 @@ import { TelemetryPanel } from "@/components/live/telemetry-panel";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/shared/empty-state";
-import { Gamepad2 } from "lucide-react";
+import { SessionSummaryCard } from "@/components/live/session-summary-card";
+import { Gamepad2, Flag } from "lucide-react";
 
 export default function GameTelemetryPage() {
-  const { data, connected, error } = useGameTelemetry();
+  const { data, summary, connected, error } = useGameTelemetry();
 
   return (
     <div className="space-y-6">
@@ -57,9 +58,25 @@ export default function GameTelemetryPage() {
                 <strong className="text-foreground">In the F1 game</strong> (PC, PS5, or Xbox): go to Settings → Telemetry. Turn <strong className="text-foreground">UDP Telemetry</strong> On. Set <strong className="text-foreground">UDP IP</strong> to <code className="rounded bg-muted px-1.5 py-0.5 text-xs">127.0.0.1</code> (game on same PC) or your PC’s IP (e.g. 192.168.1.x) if the game is on another device. Set <strong className="text-foreground">UDP Port</strong> to <code className="rounded bg-muted px-1.5 py-0.5 text-xs">20777</code>. Set <strong className="text-foreground">UDP Format</strong> to 2024 or 2025. Enter a session (Practice, Qualifying, or Race).
               </li>
               <li>
-                You should see <strong className="text-foreground">Connected</strong> above and live speed, RPM, throttle, brake, gear, and DRS.
+                When you <strong className="text-foreground">finish your session or race</strong>, a summary card will appear here with your position, best lap, total time, and more.
               </li>
             </ol>
+          </CardContent>
+        </Card>
+      )}
+
+      {connected && summary && (
+        <SessionSummaryCard summary={summary} />
+      )}
+
+      {connected && !summary && (
+        <Card className="border-dashed">
+          <CardContent className="py-12 text-center">
+            <Flag className="h-12 w-12 text-muted-foreground/50 mx-auto mb-3" />
+            <p className="text-sm font-medium text-foreground">Session summary will appear here</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Finish your race or session to see your result card (position, best lap, total time, pit stops).
+            </p>
           </CardContent>
         </Card>
       )}
