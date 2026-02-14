@@ -132,6 +132,22 @@
   }
 }
 
+/* Prevent Radix UI scroll lock from shifting the page layout.
+   Doubled selectors give higher specificity to beat runtime-injected !important styles
+   from react-remove-scroll-bar. */
+html body[data-scroll-locked][data-scroll-locked] {
+  overflow: auto !important;
+  padding-right: 0 !important;
+  padding-left: 0 !important;
+  margin-right: 0 !important;
+  margin-left: 0 !important;
+}
+
+.with-scroll-bars-hidden.with-scroll-bars-hidden {
+  overflow: auto !important;
+  padding-right: 0 !important;
+}
+
 /* react-grid-layout overrides */
 .react-grid-item.react-grid-placeholder {
   background: oklch(0.708 0 0 / 20%) !important;

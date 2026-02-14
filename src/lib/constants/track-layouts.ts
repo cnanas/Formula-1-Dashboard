@@ -4,7 +4,8 @@ export interface TrackLayout {
 
 const TRACK_LAYOUTS: Record<string, TrackLayout> = {
   bahrain: { svgPath: "/circuits-svg/bahrain-1.svg" },
-  sakhir: { svgPath: "/circuits-svg/bahrain-3.svg" },
+  // Sakhir is the Bahrain GP layout; use the primary Bahrain SVG
+  sakhir: { svgPath: "/circuits-svg/bahrain-1.svg" },
   jeddah: { svgPath: "/circuits-svg/jeddah-1.svg" },
   melbourne: { svgPath: "/circuits-svg/melbourne-2.svg" },
   suzuka: { svgPath: "/circuits-svg/suzuka-2.svg" },

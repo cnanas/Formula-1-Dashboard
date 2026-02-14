@@ -12,9 +12,8 @@ import { useOpenF1 } from "@/hooks/use-openf1";
 import type { Meeting, Session } from "@/types/openf1";
 
 // Available years for the session picker
-// Use fixed max year to avoid hydration issues
 const MIN_YEAR = 2023;
-const MAX_YEAR = 2026;
+const MAX_YEAR = new Date().getFullYear();
 const AVAILABLE_YEARS = Array.from(
   { length: MAX_YEAR - MIN_YEAR + 1 },
   (_, i) => MAX_YEAR - i
@@ -27,8 +26,8 @@ interface SessionPickerProps {
   onSessionChange: (sessionKey: string) => void;
 }
 
-// Default to 2025 since 2026 season may not have data yet
-const DEFAULT_YEAR = 2025;
+// Default to current year
+const DEFAULT_YEAR = MAX_YEAR;
 
 export function SessionPicker({
   selectedMeeting,

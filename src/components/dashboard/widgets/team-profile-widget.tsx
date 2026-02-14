@@ -43,51 +43,97 @@ export function TeamProfileWidget() {
     prevGlobalSeasonRef.current = globalSeason;
   }, [globalSeason]);
 
-  // Get sessions for the season to find the latest one
+  // Get all sessions for the season (any type - practice, quali, race, testing)
   const { data: sessions, isLoading: sessionsLoading } = useOpenF1("sessions", {
     year: season,
-    session_type: "Race",
   });
 
-  // Find the most recent completed race session
-  const latestSession = useMemo(() => {
-    return sessions
-      .filter((s) => new Date(s.date_start) < new Date())
-      .sort((a, b) => new Date(b.date_start).getTime() - new Date(a.date_start).getTime())[0];
+  // Resolve drivers from the latest started session that has driver entries.
+  const candidateSessions = useMemo(() => {
+    const now = new Date();
+    return [...sessions]
+      .filter((s) => new Date(s.date_start) < now)
+      .sort((a, b) => new Date(b.date_start).getTime() - new Date(a.date_start).getTime())
+      .slice(0, 3);
   }, [sessions]);
 
-  const sessionKey = latestSession?.session_key?.toString();
+  const candidateSessionKey0 = candidateSessions[0]?.session_key?.toString();
+  const candidateSessionKey1 = candidateSessions[1]?.session_key?.toString();
+  const candidateSessionKey2 = candidateSessions[2]?.session_key?.toString();
 
-  // Get all drivers
-  const { data: drivers, isLoading: driversLoading } = useOpenF1(
+  const { data: candidateDrivers0, isLoading: candidateDrivers0Loading } = useOpenF1(
     "drivers",
-    { session_key: sessionKey },
-    { enabled: !!sessionKey }
+    { session_key: candidateSessionKey0 },
+    { enabled: !!candidateSessionKey0 }
+  );
+  const { data: candidateDrivers1, isLoading: candidateDrivers1Loading } = useOpenF1(
+    "drivers",
+    { session_key: candidateSessionKey1 },
+    { enabled: !!candidateSessionKey1 }
+  );
+  const { data: candidateDrivers2, isLoading: candidateDrivers2Loading } = useOpenF1(
+    "drivers",
+    { session_key: candidateSessionKey2 },
+    { enabled: !!candidateSessionKey2 }
   );
 
-  // Get constructor standings
+  const resolvedSessionIndex = useMemo(() => {
+    const pools = [candidateDrivers0, candidateDrivers1, candidateDrivers2];
+    const idx = pools.findIndex((d) => d.length > 0);
+    return idx >= 0 ? idx : 0;
+  }, [candidateDrivers0, candidateDrivers1, candidateDrivers2]);
+
+  const drivers = useMemo(() => {
+    if (resolvedSessionIndex === 0) return candidateDrivers0;
+    if (resolvedSessionIndex === 1) return candidateDrivers1;
+    if (resolvedSessionIndex === 2) return candidateDrivers2;
+    return [];
+  }, [candidateDrivers0, candidateDrivers1, candidateDrivers2, resolvedSessionIndex]);
+
+  // Standings are most reliable via the latest completed race session for the selected season.
+  const { data: raceSessions, isLoading: raceSessionsLoading } = useOpenF1(
+    "sessions",
+    { year: season, session_type: "Race" },
+    { enabled: !sessionsLoading }
+  );
+
+  const latestCompletedRaceSession = useMemo(() => {
+    const now = new Date().getTime();
+    return [...raceSessions]
+      .filter((s) => {
+        const end = s.date_end ? new Date(s.date_end).getTime() : NaN;
+        const effectiveEnd = Number.isFinite(end) ? end : new Date(s.date_start).getTime();
+        return effectiveEnd <= now;
+      })
+      .sort((a, b) => new Date(b.date_start).getTime() - new Date(a.date_start).getTime())[0];
+  }, [raceSessions]);
+
+  const standingsSessionKey = latestCompletedRaceSession?.session_key?.toString();
+
   const { data: constructorStandings, isLoading: constructorStandingsLoading } = useOpenF1(
     "championship_teams",
-    { session_key: sessionKey },
-    { enabled: !!sessionKey }
+    { session_key: standingsSessionKey },
+    { enabled: !!standingsSessionKey }
   );
 
-  // Get driver standings
-  const { data: driverStandings } = useOpenF1(
+  const { data: driverStandings, isLoading: driverStandingsLoading } = useOpenF1(
     "championship_drivers",
-    { session_key: sessionKey },
-    { enabled: !!sessionKey }
+    { session_key: standingsSessionKey },
+    { enabled: !!standingsSessionKey }
   );
+
+  const allConstructorStandings = constructorStandings;
+  const allDriverStandings = driverStandings;
 
   // Get unique teams
   const teams = useMemo(() => {
     const teamNames = new Set(drivers.map((d) => d.team_name));
     return Array.from(teamNames).sort((a, b) => {
-      const aStanding = constructorStandings.find((s) => s.team_name === a);
-      const bStanding = constructorStandings.find((s) => s.team_name === b);
+      const aStanding = allConstructorStandings.find((s) => s.team_name === a);
+      const bStanding = allConstructorStandings.find((s) => s.team_name === b);
       return (aStanding?.position_current ?? 99) - (bStanding?.position_current ?? 99);
     });
-  }, [drivers, constructorStandings]);
+  }, [drivers, allConstructorStandings]);
 
   // Load saved team from localStorage
   useEffect(() => {
@@ -109,6 +155,14 @@ export function TeamProfileWidget() {
     }
   }, [mounted, selectedTeam, teams]);
 
+  // Reset stale saved team if it doesn't exist in this season/session team list
+  useEffect(() => {
+    if (!mounted || !selectedTeam || teams.length === 0) return;
+    if (!teams.includes(selectedTeam)) {
+      setSelectedTeam(teams[0]);
+    }
+  }, [mounted, selectedTeam, teams]);
+
   // Sync to team filter when set
   useEffect(() => {
     if (mounted && teamFilter && teams.includes(teamFilter)) {
@@ -126,11 +180,18 @@ export function TeamProfileWidget() {
     }
   };
 
-  const isLoading = sessionsLoading || driversLoading || constructorStandingsLoading;
+  const isLoading =
+    sessionsLoading ||
+    candidateDrivers0Loading ||
+    candidateDrivers1Loading ||
+    candidateDrivers2Loading ||
+    raceSessionsLoading ||
+    constructorStandingsLoading ||
+    driverStandingsLoading;
 
   const teamStanding = useMemo(() => {
-    return constructorStandings.find((t) => t.team_name === selectedTeam);
-  }, [constructorStandings, selectedTeam]);
+    return allConstructorStandings.find((t) => t.team_name === selectedTeam);
+  }, [allConstructorStandings, selectedTeam]);
 
   const teamDrivers = useMemo(() => {
     return drivers.filter((d) => d.team_name === selectedTeam);
@@ -139,9 +200,9 @@ export function TeamProfileWidget() {
   const teamDriverStandings = useMemo(() => {
     return teamDrivers.map((driver) => ({
       driver,
-      standing: driverStandings.find((s) => s.driver_number === driver.driver_number),
+      standing: allDriverStandings.find((s) => s.driver_number === driver.driver_number),
     }));
-  }, [teamDrivers, driverStandings]);
+  }, [teamDrivers, allDriverStandings]);
 
   const teamColor = teamDrivers.length > 0 ? getTeamColor(teamDrivers[0].team_colour) : "#666";
 
@@ -185,13 +246,13 @@ export function TeamProfileWidget() {
         </Select>
         <div className="flex-1 min-w-0">
           <Select value={selectedTeam} onValueChange={handleTeamChange}>
-            <SelectTrigger className="w-full h-9">
+            <SelectTrigger className="w-full h-9 min-w-[200px]">
               <Users className="h-4 w-4 mr-2 text-muted-foreground shrink-0" />
               <SelectValue placeholder="Select a team" />
             </SelectTrigger>
             <SelectContent>
               {teams.map((team) => {
-                const standing = constructorStandings.find((s) => s.team_name === team);
+                const standing = allConstructorStandings.find((s) => s.team_name === team);
                 return (
                   <SelectItem key={team} value={team}>
                     {standing ? `P${standing.position_current} - ` : ""}{team}

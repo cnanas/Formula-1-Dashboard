@@ -30,6 +30,7 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     title: "Analytics",
     items: [
+      { label: "Sessions", href: "/sessions", icon: BarChart3 },
       { label: "Head to Head", href: "/compare", icon: GitCompareArrows },
       { label: "Pit Stops", href: "/pitstops", icon: CircleDot },
       { label: "Weather", href: "/weather", icon: CloudSun },

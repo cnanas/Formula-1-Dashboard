@@ -17,6 +17,9 @@ interface UseOpenF1Options {
   refreshInterval?: number;
 }
 
+const MAX_DEDUPING_INTERVAL_MS = 30_000;
+const CACHE_VERSION = "v2";
+
 /**
  * Generic hook for fetching OpenF1 data with SWR.
  * Returns typed data based on the endpoint.
@@ -28,16 +31,17 @@ export function useOpenF1<E extends OpenF1Endpoint>(
 ) {
   const { enabled = true, refreshInterval = 0 } = options;
   const path = buildProxyPath(endpoint, params);
-  const cacheKey = `openf1:${path}`;
+  const cacheKey = `openf1:${CACHE_VERSION}:${path}`;
   const { ttl } = getEndpointCacheTTL(endpoint);
   const cachedData = useMemo(
     () => getCached<OpenF1Endpoints[E][]>(cacheKey),
     [cacheKey]
   );
-  const dedupingInterval =
+  const baseDedupingInterval =
     refreshInterval > 0
       ? Math.max(500, Math.min(ttl, refreshInterval - 100))
       : ttl;
+  const dedupingInterval = Math.min(baseDedupingInterval, MAX_DEDUPING_INTERVAL_MS);
 
   const { data, error, isLoading, mutate } = useSWR<OpenF1Endpoints[E][]>(
     enabled ? path : null,

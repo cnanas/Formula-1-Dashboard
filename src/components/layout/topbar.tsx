@@ -142,10 +142,51 @@ export function Topbar() {
     );
     return sorted.find((s) => new Date(s.date_start) > now) ?? null;
   }, [upcomingSessions]);
-  const nextSessionDate = useMemo(
-    () => (nextSession ? new Date(nextSession.date_start) : null),
-    [nextSession?.date_start]
-  );
+  // Parse session start: API returns UTC, but some events (e.g. Pre-Season Testing) use US broadcast time (10am EST)
+  const nextSessionDate = useMemo(() => {
+    if (!nextSession?.date_start) return null;
+    const raw = nextSession.date_start;
+    const hasTz = /(Z|[+-]\d{2}:?\d{2})$/.test(raw);
+    const iso = hasTz ? raw : raw.replace(/\.\d+$/, "") + "Z";
+    let date = new Date(iso);
+    // Pre-Season Testing in Bahrain: API has 07:00 UTC (10am local); official US start is 10am EST (15:00 UTC)
+    const isPreSeasonBahrain =
+      nextSession.circuit_short_name === "Sakhir" &&
+      nextSession.country_code === "BRN" &&
+      (nextSession.session_name === "Day 1" || nextSession.session_name === "Day 2" || nextSession.session_name === "Day 3");
+    if (isPreSeasonBahrain) {
+      const utcHours = date.getUTCHours();
+      const utcMins = date.getUTCMinutes();
+      // 07:00 UTC = 2am EST; correct to 15:00 UTC = 10am EST
+      if (utcHours === 7 && utcMins === 0) {
+        date = new Date(date.getTime() + 8 * 60 * 60 * 1000);
+      }
+    }
+    return date;
+  }, [nextSession?.date_start, nextSession?.circuit_short_name, nextSession?.country_code, nextSession?.session_name]);
+
+  const nextSessionLocalTime = useMemo(() => {
+    if (!nextSessionDate) return "";
+    return nextSessionDate.toLocaleString(undefined, {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      timeZoneName: "short",
+    });
+  }, [nextSessionDate]);
+
+  const nextSessionLocalTimeShort = useMemo(() => {
+    if (!nextSessionDate) return "";
+    return nextSessionDate.toLocaleString(undefined, {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      timeZoneName: "short",
+    });
+  }, [nextSessionDate]);
 
   const teams = useMemo(() => {
     const names = [...new Set(drivers.map((d) => d.team_name).filter(Boolean))];
@@ -309,7 +350,7 @@ export function Topbar() {
             </div>
           )}
 
-          {/* Next race/event countdown: flag, circuit name, countdown - only after mount to avoid hydration mismatch */}
+          {/* Next race/event countdown: flag, circuit, session name, local time, countdown */}
           {mounted && !isLive && nextSession && nextSessionDate && (
             <div className="ml-1 hidden shrink-0 items-center gap-2 rounded-lg border border-border/60 bg-muted/30 px-2.5 py-1.5 sm:flex">
               <span className="relative h-4 w-5 shrink-0 overflow-hidden rounded-sm">
@@ -324,6 +365,14 @@ export function Topbar() {
               </span>
               <span className="truncate text-xs font-medium text-foreground">
                 {nextSession.circuit_short_name}
+              </span>
+              <span className="text-muted-foreground">·</span>
+              <span className="truncate text-xs text-muted-foreground" title={nextSessionLocalTime}>
+                {nextSession.session_name}
+              </span>
+              <span className="text-muted-foreground">·</span>
+              <span className="truncate text-[10px] text-muted-foreground" title={nextSessionLocalTime}>
+                {nextSessionLocalTimeShort}
               </span>
               <span className="text-muted-foreground">·</span>
               <HeaderCountdown targetDate={nextSessionDate} />
@@ -438,7 +487,7 @@ export function Topbar() {
 
       {/* Mobile-only: second row for countdown or live - white background on mobile */}
       {mounted && !isLive && nextSession && nextSessionDate && (
-        <div className="flex sm:hidden w-full items-center gap-2 border-t border-border/50 bg-background px-3 py-2">
+        <div className="flex sm:hidden w-full flex-wrap items-center gap-2 border-t border-border/50 bg-background px-3 py-2">
           <span className="relative h-4 w-5 shrink-0 overflow-hidden rounded-sm">
             <Image
               src={`https://flagcdn.com/24x18/${(getCircuitTheme(nextSession.circuit_short_name).countryCode || getCountryFlagCode(nextSession.country_code)).toLowerCase()}.png`}
@@ -451,6 +500,14 @@ export function Topbar() {
           </span>
           <span className="truncate text-xs font-medium text-foreground min-w-0">
             {nextSession.circuit_short_name}
+          </span>
+          <span className="text-muted-foreground shrink-0">·</span>
+          <span className="truncate text-xs text-muted-foreground">
+            {nextSession.session_name}
+          </span>
+          <span className="text-muted-foreground shrink-0">·</span>
+          <span className="truncate text-[10px] text-muted-foreground" title={nextSessionLocalTime}>
+            {nextSessionLocalTimeShort}
           </span>
           <span className="text-muted-foreground shrink-0">·</span>
           <HeaderCountdown targetDate={nextSessionDate} />

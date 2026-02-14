@@ -13,9 +13,14 @@ interface CacheEntry<T> {
 const memoryCache = new Map<string, CacheEntry<unknown>>();
 
 const CACHE_PREFIX = "f1dash_";
+const EMPTY_RESPONSE_TTL_MS = 30_000;
 
 function isExpired<T>(entry: CacheEntry<T>): boolean {
-  return Date.now() - entry.timestamp > entry.ttl;
+  const effectiveTtl =
+    Array.isArray(entry.data) && entry.data.length === 0
+      ? Math.min(entry.ttl, EMPTY_RESPONSE_TTL_MS)
+      : entry.ttl;
+  return Date.now() - entry.timestamp > effectiveTtl;
 }
 
 export function getCached<T>(key: string): T | null {
@@ -91,6 +96,7 @@ export const CacheTTL = {
   TELEMETRY: 1_000,      // Car telemetry (1s)
   WEATHER: 60_000,       // Weather (60s)
   RACE_CONTROL: 5_000,   // Race control (5s)
+  SESSION_STATS: 30_000, // Session stats that can update during a live session (30s)
   STANDINGS: 3_600_000,  // Championship standings (1hr)
   MEETINGS: 86_400_000,  // Season calendar (24hr)
   SESSIONS: 3_600_000,   // Sessions list (1hr)

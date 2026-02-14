@@ -46,6 +46,8 @@ export interface Driver {
   session_key: number;
   team_colour: string | null;
   team_name: string;
+  /** Country code (e.g. MCO, GBR); optional/deprecated in API, may be null */
+  country_code?: string | null;
 }
 
 export interface Interval {

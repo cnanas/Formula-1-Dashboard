@@ -22,6 +22,7 @@ import {
   User,
   Users,
   Gamepad2,
+  BarChart3,
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -45,6 +46,7 @@ import { NewLiveriesWidget } from "./widgets/new-liveries-widget";
 import { DriverProfileWidget } from "./widgets/driver-profile-widget";
 import { TeamProfileWidget } from "./widgets/team-profile-widget";
 import { GameSetupsWidget } from "./widgets/game-setups-widget";
+import { LatestSessionWidget } from "./widgets/latest-session-widget";
 import { useDashboardEdit } from "@/providers/dashboard-edit-provider";
 
 import "react-grid-layout/css/styles.css";
@@ -181,6 +183,13 @@ const WIDGET_REGISTRY: Record<
     component: GameSetupsWidget,
     defaultSize: { w: 4, h: 8 },
   },
+  "latest-session": {
+    title: "Latest Session",
+    subtitle: "Recent Results",
+    icon: BarChart3,
+    component: LatestSessionWidget,
+    defaultSize: { w: 4, h: 7 },
+  },
 };
 
 const STORAGE_KEY = "f1dash_widget_layouts_v4";
@@ -302,8 +311,19 @@ export function DashboardGrid() {
   }, [setShowEditButton]);
 
   useEffect(() => {
-    setActiveWidgets(loadFromStorage(WIDGETS_KEY, DEFAULT_WIDGETS));
-    setLayouts(loadFromStorage(STORAGE_KEY, DEFAULT_LAYOUTS));
+    const loadedWidgets = loadFromStorage(WIDGETS_KEY, DEFAULT_WIDGETS);
+    const loadedLayouts = loadFromStorage(STORAGE_KEY, DEFAULT_LAYOUTS);
+
+    // Filter layouts to only include active widgets
+    const cleanedLayouts: ResponsiveLayouts = {};
+    for (const [bp, items] of Object.entries(loadedLayouts)) {
+      cleanedLayouts[bp] = (items ?? []).filter((item) =>
+        item && loadedWidgets.includes(item.i)
+      );
+    }
+
+    setActiveWidgets(loadedWidgets);
+    setLayouts(cleanedLayouts);
     setMounted(true);
   }, []);
 

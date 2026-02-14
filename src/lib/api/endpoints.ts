@@ -67,12 +67,12 @@ export function getEndpointCacheTTL(endpoint: OpenF1Endpoint): {
     case "championship_teams":
       return { ttl: CacheTTL.STANDINGS, persist: true };
     case "laps":
+    case "session_result":
+    case "starting_grid":
     case "stints":
     case "pit":
     case "overtakes":
-    case "session_result":
-    case "starting_grid":
-      return { ttl: CacheTTL.IMMUTABLE, persist: true };
+      return { ttl: CacheTTL.SESSION_STATS, persist: false };
     default:
       return { ttl: CacheTTL.STANDINGS, persist: false };
   }

@@ -11,6 +11,7 @@ import {
   CloudSun,
   MapPin,
   Gamepad2,
+  BarChart3,
 } from "lucide-react";
 
 export interface NavItem {
@@ -29,6 +30,7 @@ export const DEFAULT_NAV_ORDER: string[] = [
   "news",
   "standings",
   "track-history",
+  "sessions",
   "compare",
   "pitstops",
   "weather",
@@ -44,6 +46,7 @@ export const NAV_ITEMS: Record<string, NavItem> = {
   "game-setups": { id: "game-setups", label: "Game Setups", href: "/setups", icon: Gamepad2 },
   news: { id: "news", label: "News", href: "/news", icon: Newspaper },
   "track-history": { id: "track-history", label: "Track History", href: "/tracks", icon: MapPin },
+  sessions: { id: "sessions", label: "Sessions", href: "/sessions", icon: BarChart3 },
   compare: { id: "compare", label: "Compare", href: "/compare", icon: GitCompareArrows },
   pitstops: { id: "pitstops", label: "Pit Stops", href: "/pitstops", icon: CircleDot },
   weather: { id: "weather", label: "Weather", href: "/weather", icon: CloudSun },

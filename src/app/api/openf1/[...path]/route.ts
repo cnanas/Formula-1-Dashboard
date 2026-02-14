@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { redisGet, redisSet } from "@/lib/cache/redis";
 
 const OPENF1_BASE = "https://api.openf1.org/v1";
+const EMPTY_RESPONSE_MAX_AGE_SECONDS = 30;
+const EMPTY_RESPONSE_SWR_SECONDS = 15;
+const CACHE_VERSION = "v2";
 
 export async function GET(
   request: NextRequest,
@@ -12,12 +15,14 @@ export async function GET(
   const searchParams = request.nextUrl.searchParams.toString();
   const url = `${OPENF1_BASE}/${endpoint}${searchParams ? `?${searchParams}` : ""}`;
   const cachePolicy = getCachePolicy(endpoint);
-  const cacheKey = `openf1:${endpoint}${searchParams ? `?${searchParams}` : ""}`;
+  const cacheKey = `openf1:${CACHE_VERSION}:${endpoint}${searchParams ? `?${searchParams}` : ""}`;
 
   // Try Redis cache first (server-side)
   const cached = await redisGet<unknown>(cacheKey);
-  if (cached != null) {
-    const cacheControl = `public, max-age=${cachePolicy.maxAgeSeconds}, s-maxage=${cachePolicy.maxAgeSeconds}, stale-while-revalidate=${cachePolicy.staleWhileRevalidateSeconds}`;
+  const hasEmptyArrayCache = Array.isArray(cached) && cached.length === 0;
+  if (cached != null && !hasEmptyArrayCache) {
+    const effectiveCachePolicy = getEffectiveCachePolicy(cachePolicy, cached);
+    const cacheControl = `public, max-age=${effectiveCachePolicy.maxAgeSeconds}, s-maxage=${effectiveCachePolicy.maxAgeSeconds}, stale-while-revalidate=${effectiveCachePolicy.staleWhileRevalidateSeconds}`;
     return NextResponse.json(cached, {
       headers: { "Cache-Control": cacheControl },
     });
@@ -26,7 +31,7 @@ export async function GET(
   try {
     const response = await fetch(url, {
       headers: { Accept: "application/json" },
-      next: { revalidate: cachePolicy.maxAgeSeconds },
+      cache: "no-store",
     });
 
     if (!response.ok) {
@@ -38,10 +43,12 @@ export async function GET(
 
     const data = await response.json();
 
-    // Store in Redis for next time
-    await redisSet(cacheKey, data, cachePolicy.maxAgeSeconds);
+    const effectiveCachePolicy = getEffectiveCachePolicy(cachePolicy, data);
 
-    const cacheControl = `public, max-age=${cachePolicy.maxAgeSeconds}, s-maxage=${cachePolicy.maxAgeSeconds}, stale-while-revalidate=${cachePolicy.staleWhileRevalidateSeconds}`;
+    // Store in Redis for next time
+    await redisSet(cacheKey, data, effectiveCachePolicy.maxAgeSeconds);
+
+    const cacheControl = `public, max-age=${effectiveCachePolicy.maxAgeSeconds}, s-maxage=${effectiveCachePolicy.maxAgeSeconds}, stale-while-revalidate=${effectiveCachePolicy.staleWhileRevalidateSeconds}`;
 
     return NextResponse.json(data, {
       headers: { "Cache-Control": cacheControl },
@@ -69,12 +76,12 @@ function getCachePolicy(endpoint: string): {
     case "championship_teams":
       return { maxAgeSeconds: 3_600, staleWhileRevalidateSeconds: 300 };
     case "laps":
+    case "session_result":
+    case "starting_grid":
     case "stints":
     case "pit":
     case "overtakes":
-    case "session_result":
-    case "starting_grid":
-      return { maxAgeSeconds: 604_800, staleWhileRevalidateSeconds: 86_400 };
+      return { maxAgeSeconds: 30, staleWhileRevalidateSeconds: 15 };
     case "position":
     case "intervals":
     case "car_data":
@@ -83,4 +90,21 @@ function getCachePolicy(endpoint: string): {
     default:
       return { maxAgeSeconds: 60, staleWhileRevalidateSeconds: 30 };
   }
+}
+
+function getEffectiveCachePolicy<T>(
+  basePolicy: { maxAgeSeconds: number; staleWhileRevalidateSeconds: number },
+  data: T
+): { maxAgeSeconds: number; staleWhileRevalidateSeconds: number } {
+  if (Array.isArray(data) && data.length === 0) {
+    return {
+      maxAgeSeconds: Math.min(basePolicy.maxAgeSeconds, EMPTY_RESPONSE_MAX_AGE_SECONDS),
+      staleWhileRevalidateSeconds: Math.min(
+        basePolicy.staleWhileRevalidateSeconds,
+        EMPTY_RESPONSE_SWR_SECONDS
+      ),
+    };
+  }
+
+  return basePolicy;
 }

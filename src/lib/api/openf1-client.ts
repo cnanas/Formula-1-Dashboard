@@ -8,10 +8,23 @@ import { buildProxyPath, getEndpointCacheTTL, getEndpointPriority } from "./endp
 import { getClientRateLimiter } from "./rate-limiter";
 
 const inFlightRequests = new Map<string, Promise<unknown>>();
+const EMPTY_RESPONSE_TTL_MS = 30_000;
+const CACHE_VERSION = "v2";
 
 function getEndpointFromPath(path: string): OpenF1Endpoint | null {
   const endpoint = path.replace(/^\//, "").split("?")[0] as OpenF1Endpoint;
   return endpoint || null;
+}
+
+function getEffectiveCacheConfig<T>(
+  data: T,
+  ttl: number,
+  persist: boolean
+): { ttl: number; persist: boolean } {
+  if (Array.isArray(data) && data.length === 0) {
+    return { ttl: Math.min(ttl, EMPTY_RESPONSE_TTL_MS), persist: false };
+  }
+  return { ttl, persist };
 }
 
 /**
@@ -24,7 +37,7 @@ export async function fetchOpenF1<E extends OpenF1Endpoint>(
   options?: { skipCache?: boolean; signal?: AbortSignal }
 ): Promise<OpenF1Endpoints[E][]> {
   const path = buildProxyPath(endpoint, params);
-  const cacheKey = `openf1:${path}`;
+  const cacheKey = `openf1:${CACHE_VERSION}:${path}`;
 
   // Check cache first
   if (!options?.skipCache) {
@@ -52,7 +65,8 @@ export async function fetchOpenF1<E extends OpenF1Endpoint>(
 
   // Cache the result
   const { ttl, persist } = getEndpointCacheTTL(endpoint);
-  setCache(cacheKey, data, ttl, persist);
+  const effectiveCache = getEffectiveCacheConfig(data, ttl, persist);
+  setCache(cacheKey, data, effectiveCache.ttl, effectiveCache.persist);
 
   return data;
 }
@@ -62,7 +76,7 @@ export async function fetchOpenF1<E extends OpenF1Endpoint>(
  * The key format is: /endpoint?param=value
  */
 export async function openf1Fetcher<T>(path: string): Promise<T> {
-  const cacheKey = `openf1:${path}`;
+  const cacheKey = `openf1:${CACHE_VERSION}:${path}`;
   const endpoint = getEndpointFromPath(path);
 
   if (endpoint) {
@@ -90,7 +104,8 @@ export async function openf1Fetcher<T>(path: string): Promise<T> {
 
     if (endpoint) {
       const { ttl, persist } = getEndpointCacheTTL(endpoint);
-      setCache(cacheKey, data, ttl, persist);
+      const effectiveCache = getEffectiveCacheConfig(data, ttl, persist);
+      setCache(cacheKey, data, effectiveCache.ttl, effectiveCache.persist);
     }
 
     return data;
