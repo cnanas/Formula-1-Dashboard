@@ -20,7 +20,7 @@ export default function GameTelemetryPage() {
             variant={connected ? (data ? "default" : "secondary") : "secondary"}
             className={connected && data ? "" : "font-normal"}
           >
-            {connected ? (data ? "Live" : "Relay connected") : "Disconnected"}
+            {connected ? (data ? "Game connected" : "Relay connected") : "Disconnected"}
           </Badge>
         </div>
         {connected && !data && (
