@@ -8,6 +8,7 @@ import { getTrackLayout } from "@/lib/constants/track-layouts";
 import { getCircuitTheme } from "@/lib/constants/circuits";
 import { getCountryFlagCode } from "@/lib/constants/country-codes";
 import type { Meeting } from "@/types/openf1";
+import { parseApiDate } from "@/lib/utils/formatting";
 
 interface RaceCarouselProps {
   meetings: Meeting[];
@@ -66,8 +67,8 @@ export function RaceCarousel({
         >
           {meetings.map((meeting, index) => {
             const isSelected = meeting.meeting_key === selectedMeetingKey;
-            const startDate = new Date(meeting.date_start);
-            const endDate = new Date(meeting.date_end);
+            const startDate = parseApiDate(meeting.date_start) ?? new Date(0);
+            const endDate = parseApiDate(meeting.date_end) ?? new Date(0);
             const completed = isPast(endDate);
             const isLive = startDate <= now && endDate >= now;
             const isSprint = sprintMeetingKeys.has(meeting.meeting_key);

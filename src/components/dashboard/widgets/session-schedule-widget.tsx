@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { format, formatDistanceToNow, isPast, isFuture } from "date-fns";
+import { format, isPast, isFuture } from "date-fns";
+import { parseApiDate } from "@/lib/utils/formatting";
 import { Calendar, Clock, MapPin, Flag, Timer } from "lucide-react";
 import { useOpenF1 } from "@/hooks/use-openf1";
 import { useSeason } from "@/providers/season-provider";
@@ -109,7 +110,7 @@ export function SessionScheduleWidget() {
 
   // Find the next upcoming meeting
   const now = new Date();
-  const upcomingMeeting = meetings.find((m) => new Date(m.date_end) > now);
+  const upcomingMeeting = meetings.find((m) => (parseApiDate(m.date_end) ?? new Date(0)) > now);
 
   // Get sessions for the upcoming meeting
   const { data: sessions, isLoading: sessionsLoading } = useOpenF1(
@@ -145,12 +146,12 @@ export function SessionScheduleWidget() {
 
   // Sort sessions by date
   const sortedSessions = [...sessions].sort(
-    (a, b) => new Date(a.date_start).getTime() - new Date(b.date_start).getTime()
+    (a, b) => (parseApiDate(a.date_start)?.getTime() ?? 0) - (parseApiDate(b.date_start)?.getTime() ?? 0)
   );
 
   // Find the next upcoming session
-  const nextSession = sortedSessions.find((s) => isFuture(new Date(s.date_start)));
-  const nextSessionDate = nextSession ? new Date(nextSession.date_start) : null;
+  const nextSession = sortedSessions.find((s) => isFuture(parseApiDate(s.date_start) ?? new Date(0)));
+  const nextSessionDate = nextSession ? parseApiDate(nextSession.date_start) : null;
 
   return (
     <div className="space-y-5">
@@ -162,7 +163,7 @@ export function SessionScheduleWidget() {
         </div>
         <h4 className="text-lg font-bold">{upcomingMeeting.meeting_name}</h4>
         <p className="text-sm text-muted-foreground">
-          {format(new Date(upcomingMeeting.date_start), "MMM d")} - {format(new Date(upcomingMeeting.date_end), "MMM d, yyyy")}
+          {format(parseApiDate(upcomingMeeting.date_start) ?? new Date(0), "MMM d")} - {format(parseApiDate(upcomingMeeting.date_end) ?? new Date(0), "MMM d, yyyy")}
         </p>
       </div>
 
@@ -184,7 +185,7 @@ export function SessionScheduleWidget() {
         </h5>
         <div className="space-y-1.5">
           {sortedSessions.map((session) => {
-            const sessionDate = new Date(session.date_start);
+            const sessionDate = parseApiDate(session.date_start) ?? new Date(0);
             const isCompleted = isPast(sessionDate);
             const isNext = session.session_key === nextSession?.session_key;
 
@@ -229,7 +230,7 @@ export function SessionScheduleWidget() {
                     </Badge>
                   )}
                   <span className="text-sm font-mono text-muted-foreground">
-                    {format(sessionDate, "HH:mm")}
+                    {sessionDate.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", timeZoneName: "short" })}
                   </span>
                 </div>
               </div>

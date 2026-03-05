@@ -14,6 +14,7 @@ import { usePageTitle } from "@/providers/page-title-provider";
 import { useSeason } from "@/providers/season-provider";
 import { PageSkeleton } from "@/components/shared/loading-skeleton";
 import { SessionStats } from "@/components/sessions/session-stats";
+import { parseApiDate } from "@/lib/utils/formatting";
 
 export default function SessionsPage() {
   const { setPageTitle, clearPageTitle } = usePageTitle();
@@ -28,14 +29,14 @@ export default function SessionsPage() {
     if (selectedMeeting || meetings.length === 0) return "";
     const now = new Date().getTime();
     const sorted = [...meetings].sort(
-      (a, b) => new Date(b.date_start).getTime() - new Date(a.date_start).getTime()
+      (a, b) => (parseApiDate(b.date_start)?.getTime() ?? 0) - (parseApiDate(a.date_start)?.getTime() ?? 0)
     );
     const current = sorted.find((m) => {
-      const start = new Date(m.date_start).getTime();
-      const end = new Date(m.date_end).getTime();
+      const start = parseApiDate(m.date_start)?.getTime() ?? NaN;
+      const end = parseApiDate(m.date_end)?.getTime() ?? NaN;
       return start <= now && end >= now;
     });
-    const latestStarted = sorted.find((m) => new Date(m.date_start).getTime() <= now);
+    const latestStarted = sorted.find((m) => (parseApiDate(m.date_start)?.getTime() ?? NaN) <= now);
     return (current ?? latestStarted ?? sorted[0])?.meeting_key?.toString() ?? "";
   }, [meetings, selectedMeeting]);
 
@@ -50,7 +51,7 @@ export default function SessionsPage() {
   const sortedSessions = useMemo(
     () =>
       [...sessions].sort(
-        (a, b) => new Date(a.date_start).getTime() - new Date(b.date_start).getTime()
+        (a, b) => (parseApiDate(a.date_start)?.getTime() ?? 0) - (parseApiDate(b.date_start)?.getTime() ?? 0)
       ),
     [sessions]
   );
@@ -59,10 +60,10 @@ export default function SessionsPage() {
     if (activeSession || sortedSessions.length === 0) return "";
     const now = new Date().getTime();
     const completed = [...sortedSessions].filter((s) => {
-      const end = s.date_end ? new Date(s.date_end).getTime() : NaN;
+      const end = parseApiDate(s.date_end)?.getTime() ?? NaN;
       return Number.isFinite(end) && end <= now;
     });
-    const started = [...sortedSessions].filter((s) => new Date(s.date_start).getTime() <= now);
+    const started = [...sortedSessions].filter((s) => (parseApiDate(s.date_start)?.getTime() ?? NaN) <= now);
     const preferred = completed.at(-1) ?? started.at(-1) ?? sortedSessions.at(-1);
     return preferred?.session_key?.toString() ?? "";
   }, [sortedSessions, activeSession]);

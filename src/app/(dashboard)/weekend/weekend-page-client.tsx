@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useEffect, useMemo } from "react";
 import useSWR from "swr";
 import { format, formatDistanceToNow } from "date-fns";
+import { parseApiDate } from "@/lib/utils/formatting";
 import {
   BookOpenText,
   CalendarDays,
@@ -49,9 +50,7 @@ function toErrorMessage(error: unknown): string | null {
 }
 
 function toDate(value: string | null): Date | null {
-  if (!value) return null;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date;
+  return parseApiDate(value);
 }
 
 function formatDateValue(

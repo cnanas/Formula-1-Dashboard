@@ -9,6 +9,7 @@ import { useSeason } from "@/providers/season-provider";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCircuitTheme } from "@/lib/constants/circuits";
 import { getCountryFlagCode } from "@/lib/constants/country-codes";
+import { parseApiDate } from "@/lib/utils/formatting";
 
 export function CalendarWidget() {
   const { season } = useSeason();
@@ -36,13 +37,13 @@ export function CalendarWidget() {
   // Show next 5 upcoming + current
   const now = new Date();
   const upcoming = meetings
-    .filter((m) => new Date(m.date_end) >= now)
+    .filter((m) => (parseApiDate(m.date_end) ?? new Date(0)) >= now)
     .slice(0, 5);
 
   if (upcoming.length === 0) {
     const completed = [...meetings]
-      .filter((m) => new Date(m.date_end) < now)
-      .sort((a, b) => new Date(b.date_end).getTime() - new Date(a.date_end).getTime())
+      .filter((m) => (parseApiDate(m.date_end) ?? new Date(0)) < now)
+      .sort((a, b) => (parseApiDate(b.date_end)?.getTime() ?? 0) - (parseApiDate(a.date_end)?.getTime() ?? 0))
       .slice(0, 5);
 
     if (completed.length === 0) {
@@ -56,7 +57,7 @@ export function CalendarWidget() {
     return (
       <div className="space-y-1">
         {completed.map((meeting) => {
-          const startDate = new Date(meeting.date_start);
+          const startDate = parseApiDate(meeting.date_start) ?? new Date(0);
           const flagCode = (getCircuitTheme(meeting.circuit_short_name).countryCode || getCountryFlagCode(meeting.country_code)).toLowerCase();
           return (
             <div
@@ -112,8 +113,8 @@ export function CalendarWidget() {
   return (
     <div className="space-y-2">
       {upcoming.map((meeting) => {
-        const startDate = new Date(meeting.date_start);
-        const isActive = isPast(startDate) && !isPast(new Date(meeting.date_end));
+        const startDate = parseApiDate(meeting.date_start) ?? new Date(0);
+        const isActive = isPast(startDate) && !isPast(parseApiDate(meeting.date_end) ?? new Date(0));
         const flagCode = (getCircuitTheme(meeting.circuit_short_name).countryCode || getCountryFlagCode(meeting.country_code)).toLowerCase();
 
         return (

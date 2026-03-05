@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { parseApiDate } from "@/lib/utils/formatting";
 
 interface CountdownResult {
   days: number;
@@ -22,7 +23,7 @@ export function useCountdown(targetDate: string | null): CountdownResult {
     return { days: 0, hours: 0, minutes: 0, seconds: 0, isExpired: true };
   }
 
-  const diff = new Date(targetDate).getTime() - now;
+  const diff = (parseApiDate(targetDate)?.getTime() ?? 0) - now;
 
   if (diff <= 0) {
     return { days: 0, hours: 0, minutes: 0, seconds: 0, isExpired: true };

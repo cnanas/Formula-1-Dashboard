@@ -28,12 +28,12 @@ import {
 } from "@/components/ui/table";
 import { useRaceRecap } from "@/hooks/use-race-recap";
 import { usePageTitle } from "@/providers/page-title-provider";
-import { formatLapTime } from "@/lib/utils/formatting";
+import { formatLapTime, parseApiDate } from "@/lib/utils/formatting";
 
 function formatSessionDate(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Date TBD";
-  return date.toLocaleDateString("en-US", {
+  const date = parseApiDate(value);
+  if (!date) return "Date TBD";
+  return date.toLocaleDateString(undefined, {
     weekday: "long",
     month: "short",
     day: "numeric",

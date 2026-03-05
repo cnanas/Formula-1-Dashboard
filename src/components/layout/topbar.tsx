@@ -25,6 +25,7 @@ import { F1_APPLE_TV_US_URL } from "@/lib/constants/watch";
 import { getCircuitTheme } from "@/lib/constants/circuits";
 import { getCountryFlagCode } from "@/lib/constants/country-codes";
 import { normalizeTeamName } from "@/lib/constants/team-names";
+import { parseApiDate } from "@/lib/utils/formatting";
 import type { Session } from "@/types/openf1";
 
 const PAGE_TITLES: Record<string, string> = {
@@ -140,17 +141,15 @@ export function Topbar() {
   const nextSession = useMemo((): Session | null => {
     const now = new Date();
     const sorted = [...(upcomingSessions ?? [])].sort(
-      (a, b) => new Date(a.date_start).getTime() - new Date(b.date_start).getTime()
+      (a, b) => (parseApiDate(a.date_start)?.getTime() ?? 0) - (parseApiDate(b.date_start)?.getTime() ?? 0)
     );
-    return sorted.find((s) => new Date(s.date_start) > now) ?? null;
+    return sorted.find((s) => (parseApiDate(s.date_start) ?? new Date(0)) > now) ?? null;
   }, [upcomingSessions]);
   // Parse session start: API returns UTC, but some events (e.g. Pre-Season Testing) use US broadcast time (10am EST)
   const nextSessionDate = useMemo(() => {
     if (!nextSession?.date_start) return null;
-    const raw = nextSession.date_start;
-    const hasTz = /(Z|[+-]\d{2}:?\d{2})$/.test(raw);
-    const iso = hasTz ? raw : raw.replace(/\.\d+$/, "") + "Z";
-    let date = new Date(iso);
+    let date = parseApiDate(nextSession.date_start);
+    if (!date) return null;
     // Pre-Season Testing in Bahrain: API has 07:00 UTC (10am local); official US start is 10am EST (15:00 UTC)
     const isPreSeasonBahrain =
       nextSession.circuit_short_name === "Sakhir" &&

@@ -1,4 +1,17 @@
 /**
+ * Parse an API date string to a Date object.
+ * The OpenF1 API returns UTC timestamps that may lack a timezone indicator.
+ * Without this normalization, browsers treat bare date-time strings as local time.
+ */
+export function parseApiDate(value: string | null | undefined): Date | null {
+  if (!value) return null;
+  const hasTz = /(Z|[+-]\d{2}:?\d{2})$/.test(value);
+  const iso = hasTz ? value : value.replace(/\.\d+$/, "") + "Z";
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+/**
  * Format a lap time in seconds to mm:ss.SSS
  */
 export function formatLapTime(seconds: number | null): string {

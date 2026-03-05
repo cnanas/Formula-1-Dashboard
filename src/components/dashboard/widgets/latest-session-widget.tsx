@@ -17,6 +17,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FLAG_COLORS } from "@/lib/constants/flags";
 import { cn } from "@/lib/utils";
+import { parseApiDate } from "@/lib/utils/formatting";
 import {
   getLatestCompletedGrandPrixRaceSession,
   hasUsableDriverProfiles,
@@ -559,7 +560,7 @@ export function LatestSessionWidget() {
                       <p className="text-xs leading-snug">{msg.message}</p>
                       <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
                         <span>
-                          {new Date(msg.date).toLocaleTimeString([], {
+                          {(parseApiDate(msg.date) ?? new Date()).toLocaleTimeString([], {
                             hour: "2-digit",
                             minute: "2-digit",
                             second: "2-digit",

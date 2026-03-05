@@ -1,6 +1,6 @@
 "use client";
 
-import { format } from "date-fns";
+import { parseApiDate } from "@/lib/utils/formatting";
 import { Flag, AlertTriangle, Info } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -14,7 +14,7 @@ interface RaceControlFeedProps {
 
 export function RaceControlFeed({ messages }: RaceControlFeedProps) {
   const sorted = [...messages].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    (a, b) => (parseApiDate(b.date)?.getTime() ?? 0) - (parseApiDate(a.date)?.getTime() ?? 0)
   );
 
   return (
@@ -53,7 +53,7 @@ export function RaceControlFeed({ messages }: RaceControlFeedProps) {
                       <p className="text-sm">{msg.message}</p>
                       <div className="flex items-center gap-2 mt-0.5">
                         <span className="text-xs text-muted-foreground">
-                          {format(new Date(msg.date), "HH:mm:ss")}
+                          {(parseApiDate(msg.date) ?? new Date()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
                         </span>
                         {msg.lap_number && (
                           <Badge variant="outline" className="text-xs px-1.5 py-0">

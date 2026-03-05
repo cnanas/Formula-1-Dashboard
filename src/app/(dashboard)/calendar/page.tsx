@@ -9,6 +9,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { CalendarMapbox } from "@/components/calendar/calendar-mapbox";
 import { RaceCarousel } from "@/components/calendar/race-carousel";
 import { SeasonBadge } from "@/components/calendar/season-badge";
+import { parseApiDate } from "@/lib/utils/formatting";
 
 export default function CalendarPage() {
   const { season } = useSeason();
@@ -39,7 +40,7 @@ export default function CalendarPage() {
     if (selectedMeetingKey) return selectedMeetingKey;
     if (meetings.length === 0) return null;
     const now = new Date();
-    const upcoming = meetings.find((m) => new Date(m.date_start) > now);
+    const upcoming = meetings.find((m) => (parseApiDate(m.date_start) ?? new Date(0)) > now);
     return upcoming?.meeting_key ?? meetings[0]?.meeting_key ?? null;
   }, [selectedMeetingKey, meetings]);
 

@@ -1,8 +1,8 @@
 import type { Driver, Session } from "@/types/openf1";
+import { parseApiDate } from "@/lib/utils/formatting";
 
 function toTimestamp(value: string | null): number {
-  if (!value) return Number.NaN;
-  return new Date(value).getTime();
+  return parseApiDate(value)?.getTime() ?? Number.NaN;
 }
 
 function getSessionEndTimestamp(session: Session): number {
