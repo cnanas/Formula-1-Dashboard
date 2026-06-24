@@ -278,7 +278,7 @@ function Row({ label, value }: { label: string; value: string }) {
 function SetupBlock({ setup }: { setup: GameSetup }) {
   return (
     <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center gap-1.5 flex-wrap">
         <span
           className={cn(
             "text-xs font-medium px-2 py-0.5 rounded",
@@ -291,6 +291,11 @@ function SetupBlock({ setup }: { setup: GameSetup }) {
         >
           {setup.createdBy ?? setup.source}
         </span>
+        {setup.condition === "wet" && (
+          <span className="text-xs font-medium px-2 py-0.5 rounded bg-blue-500/15 text-blue-700 dark:text-blue-400">
+            💧 Wet
+          </span>
+        )}
       </div>
       <div className="grid gap-1.5 text-xs">
         <Row label="Aero" value={setup.aero} />

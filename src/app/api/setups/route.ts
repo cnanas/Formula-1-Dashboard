@@ -10,7 +10,7 @@ const THEORYCRAFTED_F126_SHEET =
   "https://docs.google.com/spreadsheets/d/1mmFai7jDGYpZ2cc_PBk3PBrpUFgbjEzB7z-q5P2VlFE/export?format=csv&gid=673562173";
 const F1LAPS_BASE = "https://www.f1laps.com";
 
-const CACHE_KEY = "setups:v4";
+const CACHE_KEY = "setups:v5";
 const CACHE_TTL = 3600;
 
 // ---------------------------------------------------------------------------
@@ -270,10 +270,19 @@ function parseF1LapsUsername(html: string): string {
   return m ? m[1] : "F1Laps";
 }
 
-async function fetchF1LapsTrack(slug: string, circuitKey: string): Promise<GameSetup | null> {
+async function fetchF1LapsTrack(
+  slug: string,
+  circuitKey: string,
+  condition: "dry" | "wet"
+): Promise<GameSetup | null> {
   try {
-    // Step 1: get the track listing to find the top setup UUID
-    const listRes = await fetch(`${F1LAPS_BASE}/f1-26/setups/${slug}/`, { cache: "no-store" });
+    const listUrl =
+      condition === "wet"
+        ? `${F1LAPS_BASE}/f1-26/setups/${slug}/wet/`
+        : `${F1LAPS_BASE}/f1-26/setups/${slug}/`;
+
+    // Step 1: get the listing to find the top setup UUID
+    const listRes = await fetch(listUrl, { cache: "no-store" });
     if (!listRes.ok) return null;
     const listHtml = await listRes.text();
 
@@ -314,6 +323,7 @@ async function fetchF1LapsTrack(slug: string, circuitKey: string): Promise<GameS
 
     return {
       game: "f126",
+      condition,
       track: circuitKey,
       trackName: TRACK_DISPLAY[circuitKey] ?? slug,
       source: "f1laps",
@@ -333,9 +343,11 @@ async function fetchF1LapsTrack(slug: string, circuitKey: string): Promise<GameS
 }
 
 async function fetchF1Laps(): Promise<GameSetup[]> {
-  const results = await Promise.all(
-    F1LAPS_TRACKS.map(({ slug, circuitKey }) => fetchF1LapsTrack(slug, circuitKey))
-  );
+  const tasks = F1LAPS_TRACKS.flatMap(({ slug, circuitKey }) => [
+    fetchF1LapsTrack(slug, circuitKey, "dry"),
+    fetchF1LapsTrack(slug, circuitKey, "wet"),
+  ]);
+  const results = await Promise.all(tasks);
   return results.filter((s): s is GameSetup => s !== null);
 }
 

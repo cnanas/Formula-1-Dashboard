@@ -27,7 +27,7 @@ function SetupCard({ setup }: { setup: GameSetup }) {
   const isTheorycrafted = setup.source === "theorycrafted"; // keep for reference below
   return (
     <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2 flex-wrap">
         <Badge
           variant="secondary"
           className={
@@ -40,6 +40,11 @@ function SetupCard({ setup }: { setup: GameSetup }) {
         >
           {setup.createdBy ?? setup.source}
         </Badge>
+        {setup.condition === "wet" && (
+          <Badge variant="secondary" className="bg-blue-500/15 text-blue-700 dark:text-blue-400">
+            💧 Wet
+          </Badge>
+        )}
       </div>
       <div className="grid gap-2 text-sm">
         <Row label="Aero" value={setup.aero} />
