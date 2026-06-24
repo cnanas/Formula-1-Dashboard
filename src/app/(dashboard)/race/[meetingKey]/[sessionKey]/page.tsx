@@ -96,7 +96,12 @@ export default function RaceAnalysisPage({
   const driverMap = new Map(drivers.map((d) => [d.driver_number, d]));
   const totalLaps =
     results.length > 0 ? Math.max(...results.map((r) => r.number_of_laps)) : 0;
-  const sortedResults = [...results].sort((a, b) => a.position - b.position);
+  const sortedResults = [...results].sort((a, b) => {
+    const aOut = a.dnf || a.dns || a.dsq ? 1 : 0;
+    const bOut = b.dnf || b.dns || b.dsq ? 1 : 0;
+    if (aOut !== bOut) return aOut - bOut;
+    return a.position - b.position;
+  });
 
   if (driversLoading || lapsLoading) return <PageSkeleton />;
 
