@@ -24,15 +24,17 @@ interface SetupDetailSheetProps {
 }
 
 function SetupCard({ setup }: { setup: GameSetup }) {
-  const isTheorycrafted = setup.source === "theorycrafted";
+  const isTheorycrafted = setup.source === "theorycrafted"; // keep for reference below
   return (
     <div className="rounded-lg border border-border bg-card p-4 space-y-3">
       <div className="flex items-center justify-between">
         <Badge
           variant="secondary"
           className={
-            isTheorycrafted
+            setup.source === "theorycrafted"
               ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
+              : setup.source === "f1laps"
+              ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
               : "bg-sky-500/15 text-sky-700 dark:text-sky-400"
           }
         >

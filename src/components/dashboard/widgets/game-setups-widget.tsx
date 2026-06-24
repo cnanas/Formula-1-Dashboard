@@ -229,7 +229,7 @@ export function GameSetupsWidget() {
               <p className="text-xs text-muted-foreground">
                 {displayTrack.setups.length} setup
                 {displayTrack.setups.length !== 1 ? "s" : ""} •{" "}
-                {selectedGame === "f126" ? "Theorycrafted" : "Theorycrafted & gruhnd"}
+                {selectedGame === "f126" ? "Theorycrafted & F1Laps" : "Theorycrafted & gruhnd"}
               </p>
             </div>
           </div>
@@ -276,15 +276,16 @@ function Row({ label, value }: { label: string; value: string }) {
 }
 
 function SetupBlock({ setup }: { setup: GameSetup }) {
-  const isTheorycrafted = setup.source === "theorycrafted";
   return (
     <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
       <div className="flex items-center justify-between">
         <span
           className={cn(
             "text-xs font-medium px-2 py-0.5 rounded",
-            isTheorycrafted
+            setup.source === "theorycrafted"
               ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
+              : setup.source === "f1laps"
+              ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
               : "bg-sky-500/15 text-sky-700 dark:text-sky-400"
           )}
         >

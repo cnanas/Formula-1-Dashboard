@@ -8,11 +8,15 @@ const GRUHND_SHEET =
   "https://docs.google.com/spreadsheets/d/17e8fkiIzDIimDnH8B4JAiC9gTK6qzmFzg7yrqwczYG0/export?format=csv&gid=1159602742";
 const THEORYCRAFTED_F126_SHEET =
   "https://docs.google.com/spreadsheets/d/1mmFai7jDGYpZ2cc_PBk3PBrpUFgbjEzB7z-q5P2VlFE/export?format=csv&gid=673562173";
+const F1LAPS_BASE = "https://www.f1laps.com";
 
-const CACHE_KEY = "setups:v3";
-const CACHE_TTL = 3600; // 1 hour
+const CACHE_KEY = "setups:v4";
+const CACHE_TTL = 3600;
 
-// Map sheet track names to circuit keys
+// ---------------------------------------------------------------------------
+// Static maps
+// ---------------------------------------------------------------------------
+
 const TRACK_MAP: Record<string, string> = {
   australia: "melbourne",
   china: "shanghai",
@@ -77,6 +81,39 @@ const TRACK_DISPLAY: Record<string, string> = {
   madrid: "Madrid",
 };
 
+// F1Laps track slugs → circuit keys
+const F1LAPS_TRACKS: { slug: string; circuitKey: string }[] = [
+  { slug: "australia",   circuitKey: "melbourne"  },
+  { slug: "china",       circuitKey: "shanghai"   },
+  { slug: "japan",       circuitKey: "suzuka"     },
+  { slug: "bahrain",     circuitKey: "bahrain"    },
+  { slug: "saudi_arabia",circuitKey: "jeddah"     },
+  { slug: "miami",       circuitKey: "miami"      },
+  { slug: "canada",      circuitKey: "montreal"   },
+  { slug: "monaco",      circuitKey: "monaco"     },
+  { slug: "spain",       circuitKey: "barcelona"  },
+  { slug: "austria",     circuitKey: "spielberg"  },
+  { slug: "silverstone", circuitKey: "silverstone"},
+  { slug: "spa",         circuitKey: "spa"        },
+  { slug: "hungary",     circuitKey: "budapest"   },
+  { slug: "netherlands", circuitKey: "zandvoort"  },
+  { slug: "monza",       circuitKey: "monza"      },
+  { slug: "madrid",      circuitKey: "madrid"     },
+  { slug: "azerbaijan",  circuitKey: "baku"       },
+  { slug: "singapore",   circuitKey: "singapore"  },
+  { slug: "usa",         circuitKey: "austin"     },
+  { slug: "mexico",      circuitKey: "mexico"     },
+  { slug: "brazil",      circuitKey: "interlagos" },
+  { slug: "las_vegas",   circuitKey: "lasvegas"   },
+  { slug: "qatar",       circuitKey: "losail"     },
+  { slug: "abudhabi",    circuitKey: "abudhabi"   },
+  { slug: "imola",       circuitKey: "imola"      },
+];
+
+// ---------------------------------------------------------------------------
+// CSV helpers (for F1 25 sheets)
+// ---------------------------------------------------------------------------
+
 function parseCSV(text: string): string[][] {
   const rows: string[][] = [];
   let currentRow: string[] = [];
@@ -88,23 +125,15 @@ function parseCSV(text: string): string[][] {
     const next = text[i + 1];
 
     if (c === '"') {
-      if (inQuotes && next === '"') {
-        field += '"';
-        i++;
-      } else {
-        inQuotes = !inQuotes;
-      }
+      if (inQuotes && next === '"') { field += '"'; i++; }
+      else inQuotes = !inQuotes;
     } else if (inQuotes) {
       field += c;
     } else if (c === ",") {
-      currentRow.push(field.trim());
-      field = "";
+      currentRow.push(field.trim()); field = "";
     } else if (c === "\n" || (c === "\r" && next !== "\n")) {
-      currentRow.push(field.trim());
-      field = "";
-      if (currentRow.some((cell) => cell.length > 0)) {
-        rows.push(currentRow);
-      }
+      currentRow.push(field.trim()); field = "";
+      if (currentRow.some((cell) => cell.length > 0)) rows.push(currentRow);
       currentRow = [];
     } else if (c === "\r") {
       // skip \r before \n
@@ -117,152 +146,202 @@ function parseCSV(text: string): string[][] {
     currentRow.push(field.trim());
     rows.push(currentRow);
   }
-
   return rows;
 }
 
 function toCircuitKey(name: string): string | null {
   const normalized = name.toLowerCase().trim().replace(/\s+/g, " ");
   for (const [sheetName, circuitKey] of Object.entries(TRACK_MAP)) {
-    if (normalized === sheetName || normalized.includes(sheetName)) {
-      return circuitKey;
-    }
+    if (normalized === sheetName || normalized.includes(sheetName)) return circuitKey;
   }
   return null;
 }
 
+// ---------------------------------------------------------------------------
+// F1 25 fetchers
+// ---------------------------------------------------------------------------
+
 async function fetchTheorycraftedF125(): Promise<GameSetup[]> {
   try {
-    const res = await fetch(THEORYCRAFTED_F125_SHEET, {
-      next: { revalidate: CACHE_TTL },
-    });
+    const res = await fetch(THEORYCRAFTED_F125_SHEET, { next: { revalidate: CACHE_TTL } });
     if (!res.ok) return [];
-    const text = await res.text();
-    const rows = parseCSV(text);
-
+    const rows = parseCSV(await res.text());
     const setups: GameSetup[] = [];
-    // Row 0: disclaimer, Row 1: headers, Row 2+: data
     for (let i = 2; i < rows.length; i++) {
       const row = rows[i];
       const circuit = row[0]?.trim() ?? "";
       if (!circuit || circuit.toLowerCase().includes("disclaimer")) continue;
-
       const circuitKey = toCircuitKey(circuit);
       if (!circuitKey) continue;
-
       setups.push({
-        game: "f125",
-        track: circuitKey,
+        game: "f125", track: circuitKey,
         trackName: TRACK_DISPLAY[circuitKey] ?? circuit,
         source: "theorycrafted",
-        aero: row[1] ?? "",
-        differential: row[2] ?? "",
-        suspensionGeometry: row[3] ?? "",
-        suspension: row[4] ?? "",
-        brakes: row[5] ?? "",
-        tiresQuali: row[6] ?? "",
-        tiresRace: row[7] ?? "",
-        compounds: row[8] ?? "",
-        strategy: row[9] ?? "",
-        laps: row[10] ?? "",
-        notes: row[12] ?? "",
-        createdBy: row[11] ?? "Theorycrafted",
+        aero: row[1] ?? "", differential: row[2] ?? "",
+        suspensionGeometry: row[3] ?? "", suspension: row[4] ?? "",
+        brakes: row[5] ?? "", tiresQuali: row[6] ?? "", tiresRace: row[7] ?? "",
+        compounds: row[8] ?? "", strategy: row[9] ?? "", laps: row[10] ?? "",
+        notes: row[12] ?? "", createdBy: row[11] ?? "Theorycrafted",
       });
     }
     return setups;
-  } catch {
-    return [];
-  }
+  } catch { return []; }
 }
 
 async function fetchGruhnd(): Promise<GameSetup[]> {
   try {
-    const res = await fetch(GRUHND_SHEET, {
-      next: { revalidate: CACHE_TTL },
-    });
+    const res = await fetch(GRUHND_SHEET, { next: { revalidate: CACHE_TTL } });
     if (!res.ok) return [];
-    const text = await res.text();
-    const rows = parseCSV(text);
-
+    const rows = parseCSV(await res.text());
     const setups: GameSetup[] = [];
-    // Row 0: disclaimer, Row 1: headers, Row 2+: data
     for (let i = 2; i < rows.length; i++) {
       const row = rows[i];
       const circuit = row[0]?.trim() ?? "";
       if (!circuit || circuit.toLowerCase().includes("disclaimer") || circuit.toLowerCase() === "unnamed") continue;
       if (row[1] === "NO" && row[2] === "SETUPS") continue;
-
       const circuitKey = toCircuitKey(circuit);
       if (!circuitKey) continue;
-
       setups.push({
-        game: "f125",
-        track: circuitKey,
+        game: "f125", track: circuitKey,
         trackName: TRACK_DISPLAY[circuitKey] ?? circuit,
         source: "gruhnd",
-        aero: row[1] ?? "",
-        differential: row[2] ?? "",
-        suspensionGeometry: row[3] ?? "",
-        suspension: row[4] ?? "",
-        brakes: row[5] ?? "",
-        tiresQuali: row[6] ?? "",
-        tiresRace: row[7] ?? "",
-        compounds: row[9] ?? "",
-        strategy: row[8] ?? "",
+        aero: row[1] ?? "", differential: row[2] ?? "",
+        suspensionGeometry: row[3] ?? "", suspension: row[4] ?? "",
+        brakes: row[5] ?? "", tiresQuali: row[6] ?? "", tiresRace: row[7] ?? "",
+        compounds: row[9] ?? "", strategy: row[8] ?? "",
         createdBy: row[11] ?? "gruhnd",
       });
     }
     return setups;
-  } catch {
-    return [];
-  }
+  } catch { return []; }
 }
+
+// ---------------------------------------------------------------------------
+// F1 26 — Theorycrafted Google Sheet
+// ---------------------------------------------------------------------------
 
 async function fetchTheorycraftedF126(): Promise<GameSetup[]> {
   try {
-    const res = await fetch(THEORYCRAFTED_F126_SHEET, {
-      cache: "no-store",
-    });
+    const res = await fetch(THEORYCRAFTED_F126_SHEET, { cache: "no-store" });
     if (!res.ok) return [];
-    const text = await res.text();
-    const rows = parseCSV(text);
-
+    const rows = parseCSV(await res.text());
     const setups: GameSetup[] = [];
-    // Empty rows at top are filtered by parseCSV → rows[0] = headers, rows[1+] = data
-    // Columns: Track, Aerodynamics, Transmission, Suspension Geometry, Suspension, Brakes,
-    //          Tyres (PSI), Track Guide Link, Race Strategy 50%, Short Format, Raw Hotlap
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i];
       const circuit = row[0]?.trim() ?? "";
       if (!circuit || circuit.toLowerCase() === "track") continue;
-      // Skip placeholder rows with no data
       if (!row[1]?.trim()) continue;
-
       const circuitKey = toCircuitKey(circuit);
       if (!circuitKey) continue;
-
       setups.push({
-        game: "f126",
-        track: circuitKey,
+        game: "f126", track: circuitKey,
         trackName: TRACK_DISPLAY[circuitKey] ?? circuit,
         source: "theorycrafted",
-        aero: row[1] ?? "",
-        differential: row[2] ?? "",
-        suspensionGeometry: row[3] ?? "",
-        suspension: row[4] ?? "",
-        brakes: row[5] ?? "",
-        tiresQuali: "",
-        tiresRace: row[6] ?? "",
-        compounds: "",
-        strategy: row[8] ?? "",
+        aero: row[1] ?? "", differential: row[2] ?? "",
+        suspensionGeometry: row[3] ?? "", suspension: row[4] ?? "",
+        brakes: row[5] ?? "", tiresQuali: "", tiresRace: row[6] ?? "",
+        compounds: "", strategy: row[8] ?? "",
         createdBy: "Theorycrafted",
       });
     }
     return setups;
+  } catch { return []; }
+}
+
+// ---------------------------------------------------------------------------
+// F1 26 — F1Laps (top ranked setup per track)
+// ---------------------------------------------------------------------------
+
+function parseF1LapsValues(html: string): Record<string, string> {
+  const values: Record<string, string> = {};
+  // Each row: dt (label) + two dd's; the second dd has class "w-2/12" and holds the number
+  const re = /<dt class="w-10\/12[^"]*">\s*([\s\S]*?)\s*<\/dt>[\s\S]*?<dd class="w-2\/12[^"]*">\s*([\s\S]*?)\s*<\/dd>/g;
+  let m;
+  while ((m = re.exec(html)) !== null) {
+    const label = m[1].replace(/\s+/g, " ").trim();
+    const val   = m[2].replace(/\s+/g, " ").trim();
+    values[label] = val;
+  }
+  return values;
+}
+
+function parseF1LapsUsername(html: string): string {
+  const m = html.match(/by\s+([A-Za-z0-9_\-\.]+)/);
+  return m ? m[1] : "F1Laps";
+}
+
+async function fetchF1LapsTrack(slug: string, circuitKey: string): Promise<GameSetup | null> {
+  try {
+    // Step 1: get the track listing to find the top setup UUID
+    const listRes = await fetch(`${F1LAPS_BASE}/f1-26/setups/${slug}/`, { cache: "no-store" });
+    if (!listRes.ok) return null;
+    const listHtml = await listRes.text();
+
+    const uuidMatch = listHtml.match(
+      new RegExp(`href="/f1-26/setups/${slug}/([a-f0-9-]{36})/"`)
+    );
+    if (!uuidMatch) return null;
+    const uuid = uuidMatch[1];
+
+    // Step 2: fetch the setup detail page
+    const detailRes = await fetch(`${F1LAPS_BASE}/f1-26/setups/${slug}/${uuid}/`, { cache: "no-store" });
+    if (!detailRes.ok) return null;
+    const detailHtml = await detailRes.text();
+
+    const v = parseF1LapsValues(detailHtml);
+    const username = parseF1LapsUsername(detailHtml);
+
+    const fw  = v["Front Wing"] ?? "";
+    const rw  = v["Rear Wing"] ?? "";
+    const don = v["Differential Adjustment On Throttle"] ?? "";
+    const dof = v["Differential Adjustment Off Throttle"] ?? "";
+    const fc  = v["Front Camber"] ?? "";
+    const rc  = v["Rear Camber"] ?? "";
+    const ft  = v["Front Toe"] ?? "";
+    const rt  = v["Rear Toe"] ?? "";
+    const fs  = v["Front Suspension"] ?? "";
+    const rs  = v["Rear Suspension"] ?? "";
+    const fa  = v["Front Anti-Roll Bar"] ?? "";
+    const ra  = v["Rear Anti-Roll Bar"] ?? "";
+    const frh = v["Front Ride Height"] ?? "";
+    const rrh = v["Rear Ride Height"] ?? "";
+    const bp  = v["Break Pressure"] ?? "";
+    const bb  = v["Front Break Bias"] ?? "";
+    const tfr = v["Front Right Tyre Pressure"] ?? "";
+    const tfl = v["Front Left Tyre Pressure"] ?? "";
+    const trr = v["Rear Right Tyre Pressure"] ?? "";
+    const trl = v["Rear Left Tyre Pressure"] ?? "";
+
+    return {
+      game: "f126",
+      track: circuitKey,
+      trackName: TRACK_DISPLAY[circuitKey] ?? slug,
+      source: "f1laps",
+      aero:               [fw, rw].filter(Boolean).join(" / "),
+      differential:       [don, dof].filter(Boolean).join(" / "),
+      suspensionGeometry: [fc, rc, ft, rt].filter(Boolean).join(" / "),
+      suspension:         [fs, rs, fa, ra, frh, rrh].filter(Boolean).join(" / "),
+      brakes:             [bp, bb].filter(Boolean).join(" / "),
+      tiresQuali:         "",
+      tiresRace:          [tfr, tfl, trr, trl].filter(Boolean).join(" / "),
+      compounds:          "",
+      createdBy:          username,
+    };
   } catch {
-    return [];
+    return null;
   }
 }
+
+async function fetchF1Laps(): Promise<GameSetup[]> {
+  const results = await Promise.all(
+    F1LAPS_TRACKS.map(({ slug, circuitKey }) => fetchF1LapsTrack(slug, circuitKey))
+  );
+  return results.filter((s): s is GameSetup => s !== null);
+}
+
+// ---------------------------------------------------------------------------
+// Route handler
+// ---------------------------------------------------------------------------
 
 export async function GET() {
   const cached = await redisGet<SetupsResponse>(CACHE_KEY);
@@ -274,13 +353,14 @@ export async function GET() {
     });
   }
 
-  const [theorycraftedF125, gruhnd, theorycraftedF126] = await Promise.all([
+  const [theorycraftedF125, gruhnd, theorycraftedF126, f1laps] = await Promise.all([
     fetchTheorycraftedF125(),
     fetchGruhnd(),
     fetchTheorycraftedF126(),
+    fetchF1Laps(),
   ]);
 
-  const setups = [...theorycraftedF125, ...gruhnd, ...theorycraftedF126];
+  const setups = [...theorycraftedF125, ...gruhnd, ...theorycraftedF126, ...f1laps];
   const byTrack: Record<string, GameSetup[]> = {};
   for (const s of setups) {
     if (!byTrack[s.track]) byTrack[s.track] = [];

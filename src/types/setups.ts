@@ -1,4 +1,4 @@
-export type SetupSource = "theorycrafted" | "gruhnd";
+export type SetupSource = "theorycrafted" | "gruhnd" | "f1laps";
 export type SetupGame = "f125" | "f126";
 
 export interface GameSetup {

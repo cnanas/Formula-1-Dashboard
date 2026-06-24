@@ -82,7 +82,7 @@ export default function SetupsPage() {
           </h1>
           <p className="text-muted-foreground mt-1">
             {selectedGame === "f126"
-              ? "Car setups for EA Sports F1 26 from Theorycrafted. Tap a track to view."
+              ? "Car setups for EA Sports F1 26 from Theorycrafted and F1Laps. Tap a track to view."
               : "Car setups for EA Sports F1 25 from Theorycrafted and gruhnd. Tap a track to view."}
           </p>
         </div>
