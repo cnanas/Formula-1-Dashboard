@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import LottieLib from "lottie-react";
+import LottieLib, { type LottieRefCurrentProps } from "lottie-react";
 
 interface LottiePlayerProps {
   src: string;
@@ -10,7 +10,7 @@ interface LottiePlayerProps {
 
 export function LottiePlayer({ src, style }: LottiePlayerProps) {
   const [animData, setAnimData] = useState<object | null>(null);
-  const lottieRef = useRef<{ play: () => void } | null>(null);
+  const lottieRef = useRef<LottieRefCurrentProps | null>(null);
 
   useEffect(() => {
     fetch(src)
