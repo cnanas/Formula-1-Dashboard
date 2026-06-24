@@ -10,7 +10,7 @@ const THEORYCRAFTED_F126_SHEET =
   "https://docs.google.com/spreadsheets/d/1mmFai7jDGYpZ2cc_PBk3PBrpUFgbjEzB7z-q5P2VlFE/export?format=csv&gid=673562173";
 const F1LAPS_BASE = "https://www.f1laps.com";
 
-const CACHE_KEY = "setups:v6";
+const CACHE_KEY = "setups:v7";
 const CACHE_TTL = 3600;
 
 // ---------------------------------------------------------------------------
@@ -436,10 +436,20 @@ export async function GET() {
   ]);
 
   const setups = [...theorycraftedF125, ...gruhnd, ...theorycraftedF126, ...f1laps];
+
+  const conditionOrder = { meta: 0, dry: 1, wet: 2 };
+  const setupOrder = (s: GameSetup) =>
+    s.source === "f1laps"
+      ? (conditionOrder[s.condition ?? "dry"] ?? 1)
+      : 10;
+
   const byTrack: Record<string, GameSetup[]> = {};
   for (const s of setups) {
     if (!byTrack[s.track]) byTrack[s.track] = [];
     byTrack[s.track].push(s);
+  }
+  for (const key of Object.keys(byTrack)) {
+    byTrack[key].sort((a, b) => setupOrder(a) - setupOrder(b));
   }
 
   const response: SetupsResponse = { setups, byTrack };
