@@ -45,8 +45,8 @@ function SetupCard({ setup }: { setup: GameSetup }) {
         <Row label="Susp. Geometry" value={setup.suspensionGeometry} />
         <Row label="Suspension" value={setup.suspension} />
         <Row label="Brakes" value={setup.brakes} />
-        <Row label="Tires Q" value={setup.tiresQuali} />
-        <Row label="Tires R" value={setup.tiresRace} />
+        {setup.game !== "f126" && <Row label="Tires Q" value={setup.tiresQuali} />}
+        <Row label={setup.game === "f126" ? "Tyres (PSI)" : "Tires R"} value={setup.tiresRace} />
         <Row label="Compounds" value={setup.compounds} />
         {setup.strategy && <Row label="Strategy" value={setup.strategy} />}
         {setup.laps && <Row label="Laps (50%)" value={setup.laps} />}
@@ -235,7 +235,7 @@ export function SetupDetailSheet({
             <div>
               <SheetTitle className="text-xl">{trackName}</SheetTitle>
               <p className="text-sm text-muted-foreground">
-                F1 25 setups • {setups.length} source{setups.length !== 1 ? "s" : ""}
+                {setups[0]?.game === "f126" ? "F1 26" : "F1 25"} setups • {setups.length} source{setups.length !== 1 ? "s" : ""}
               </p>
             </div>
           </div>

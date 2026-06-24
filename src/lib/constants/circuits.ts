@@ -253,6 +253,16 @@ export const CIRCUIT_THEMES: Record<string, CircuitTheme> = {
     accentColor: "#c8102e",
     gradientAngle: 45,
   },
+  madrid: {
+    id: "madrid",
+    name: "Circuit de Madrid",
+    country: "Spain",
+    countryCode: "ES",
+    primaryColor: "#aa151b", // Spanish red
+    secondaryColor: "#f1bf00", // Spanish yellow
+    accentColor: "#ffffff",
+    gradientAngle: 225,
+  },
 };
 
 // Team colors for team-based themes
@@ -375,6 +385,7 @@ export const CIRCUIT_NAME_MAP: Record<string, string> = {
   qatar: "losail",
   abu_dhabi: "abudhabi",
   yas_marina: "abudhabi",
+  madrid: "madrid",
 };
 
 export function getCircuitTheme(circuitName: string): CircuitTheme {

@@ -22,16 +22,21 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { CIRCUIT_THEMES } from "@/lib/constants/circuits";
 import { cn } from "@/lib/utils";
-import type { GameSetup, SetupsResponse } from "@/types/setups";
+import type { GameSetup, SetupsResponse, SetupGame } from "@/types/setups";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 const TRACK_ORDER = [
   "bahrain", "jeddah", "melbourne", "shanghai", "miami", "imola", "monaco",
   "barcelona", "montreal", "spielberg", "silverstone", "spa", "budapest",
-  "zandvoort", "monza", "baku", "singapore", "austin", "mexico", "interlagos",
-  "lasvegas", "losail", "abudhabi",
+  "zandvoort", "monza", "madrid", "baku", "singapore", "austin", "mexico",
+  "interlagos", "lasvegas", "losail", "abudhabi",
 ];
+
+const GAME_LABELS: Record<SetupGame, string> = {
+  f125: "F1 25",
+  f126: "F1 26",
+};
 
 function sortTracks(entries: [string, SetupsResponse["byTrack"][string]][]) {
   return [...entries].sort(
@@ -44,6 +49,7 @@ function sortTracks(entries: [string, SetupsResponse["byTrack"][string]][]) {
 export function GameSetupsWidget() {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [selectedGame, setSelectedGame] = useState<SetupGame>("f126");
   const [selectedTrack, setSelectedTrack] = useState<{
     circuitKey: string;
     trackName: string;
@@ -55,10 +61,18 @@ export function GameSetupsWidget() {
     revalidateOnFocus: false,
   });
 
+  const filteredByTrack = useMemo<Record<string, GameSetup[]>>(() => {
+    if (!data?.byTrack) return {};
+    return Object.fromEntries(
+      Object.entries(data.byTrack)
+        .map(([key, setups]) => [key, setups.filter((s) => s.game === selectedGame)])
+        .filter(([, setups]) => (setups as GameSetup[]).length > 0)
+    );
+  }, [data, selectedGame]);
+
   const sortedTracks = useMemo(() => {
-    if (!data?.byTrack) return [];
-    return sortTracks(Object.entries(data.byTrack));
-  }, [data]);
+    return sortTracks(Object.entries(filteredByTrack));
+  }, [filteredByTrack]);
 
   const filteredTracks = useMemo(() => {
     if (!search.trim()) return sortedTracks;
@@ -70,7 +84,7 @@ export function GameSetupsWidget() {
     );
   }, [sortedTracks, search]);
 
-  // Default to first track when data loads
+  // Default to first track when data loads or game changes
   const displayTrack = selectedTrack ?? (sortedTracks[0]
     ? {
         circuitKey: sortedTracks[0][0],
@@ -80,9 +94,14 @@ export function GameSetupsWidget() {
     : null);
 
   const handleSelect = (circuitKey: string, trackName: string) => {
-    const setups = data?.byTrack[circuitKey] ?? [];
+    const setups = filteredByTrack[circuitKey] ?? [];
     setSelectedTrack({ circuitKey, trackName, setups });
     setOpen(false);
+  };
+
+  const handleGameChange = (game: SetupGame) => {
+    setSelectedGame(game);
+    setSelectedTrack(null);
   };
 
   const handleViewFull = () => {
@@ -112,6 +131,23 @@ export function GameSetupsWidget() {
 
   return (
     <div className="space-y-4">
+      {/* Game filter */}
+      <div className="flex rounded-md border border-border overflow-hidden w-fit">
+        {(["f126", "f125"] as SetupGame[]).map((game) => (
+          <button
+            key={game}
+            onClick={() => handleGameChange(game)}
+            className={`px-3 py-1 text-xs font-medium transition-colors ${
+              selectedGame === game
+                ? "bg-primary text-primary-foreground"
+                : "bg-background text-muted-foreground hover:bg-muted"
+            }`}
+          >
+            {GAME_LABELS[game]}
+          </button>
+        ))}
+      </div>
+
       {/* Search / Dropdown */}
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
@@ -192,7 +228,8 @@ export function GameSetupsWidget() {
               <p className="font-semibold">{displayTrack.trackName}</p>
               <p className="text-xs text-muted-foreground">
                 {displayTrack.setups.length} setup
-                {displayTrack.setups.length !== 1 ? "s" : ""} • Theorycrafted & gruhnd
+                {displayTrack.setups.length !== 1 ? "s" : ""} •{" "}
+                {selectedGame === "f126" ? "Theorycrafted" : "Theorycrafted & gruhnd"}
               </p>
             </div>
           </div>
@@ -260,8 +297,8 @@ function SetupBlock({ setup }: { setup: GameSetup }) {
         <Row label="Susp. Geometry" value={setup.suspensionGeometry} />
         <Row label="Suspension" value={setup.suspension} />
         <Row label="Brakes" value={setup.brakes} />
-        <Row label="Tires Q" value={setup.tiresQuali} />
-        <Row label="Tires R" value={setup.tiresRace} />
+        {setup.game !== "f126" && <Row label="Tires Q" value={setup.tiresQuali} />}
+        <Row label={setup.game === "f126" ? "Tyres (PSI)" : "Tires R"} value={setup.tiresRace} />
         <Row label="Compounds" value={setup.compounds} />
         {setup.strategy && <Row label="Strategy" value={setup.strategy} />}
         {setup.laps && <Row label="Laps (50%)" value={setup.laps} />}

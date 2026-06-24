@@ -1,6 +1,8 @@
 export type SetupSource = "theorycrafted" | "gruhnd";
+export type SetupGame = "f125" | "f126";
 
 export interface GameSetup {
+  game: SetupGame;
   track: string;
   trackName: string;
   source: SetupSource;
