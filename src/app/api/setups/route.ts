@@ -9,7 +9,7 @@ const GRUHND_SHEET =
 const THEORYCRAFTED_F126_SHEET =
   "https://docs.google.com/spreadsheets/d/1mmFai7jDGYpZ2cc_PBk3PBrpUFgbjEzB7z-q5P2VlFE/export?format=csv&gid=673562173";
 
-const CACHE_KEY = "setups:v2";
+const CACHE_KEY = "setups:v3";
 const CACHE_TTL = 3600; // 1 hour
 
 // Map sheet track names to circuit keys
@@ -132,121 +132,136 @@ function toCircuitKey(name: string): string | null {
 }
 
 async function fetchTheorycraftedF125(): Promise<GameSetup[]> {
-  const res = await fetch(THEORYCRAFTED_F125_SHEET, {
-    next: { revalidate: CACHE_TTL },
-  });
-  if (!res.ok) return [];
-  const text = await res.text();
-  const rows = parseCSV(text);
-
-  const setups: GameSetup[] = [];
-  // Row 0: disclaimer, Row 1: headers, Row 2+: data
-  for (let i = 2; i < rows.length; i++) {
-    const row = rows[i];
-    const circuit = row[0]?.trim() ?? "";
-    if (!circuit || circuit.toLowerCase().includes("disclaimer")) continue;
-
-    const circuitKey = toCircuitKey(circuit);
-    if (!circuitKey) continue;
-
-    setups.push({
-      game: "f125",
-      track: circuitKey,
-      trackName: TRACK_DISPLAY[circuitKey] ?? circuit,
-      source: "theorycrafted",
-      aero: row[1] ?? "",
-      differential: row[2] ?? "",
-      suspensionGeometry: row[3] ?? "",
-      suspension: row[4] ?? "",
-      brakes: row[5] ?? "",
-      tiresQuali: row[6] ?? "",
-      tiresRace: row[7] ?? "",
-      compounds: row[8] ?? "",
-      strategy: row[9] ?? "",
-      laps: row[10] ?? "",
-      notes: row[12] ?? "",
-      createdBy: row[11] ?? "Theorycrafted",
+  try {
+    const res = await fetch(THEORYCRAFTED_F125_SHEET, {
+      next: { revalidate: CACHE_TTL },
     });
+    if (!res.ok) return [];
+    const text = await res.text();
+    const rows = parseCSV(text);
+
+    const setups: GameSetup[] = [];
+    // Row 0: disclaimer, Row 1: headers, Row 2+: data
+    for (let i = 2; i < rows.length; i++) {
+      const row = rows[i];
+      const circuit = row[0]?.trim() ?? "";
+      if (!circuit || circuit.toLowerCase().includes("disclaimer")) continue;
+
+      const circuitKey = toCircuitKey(circuit);
+      if (!circuitKey) continue;
+
+      setups.push({
+        game: "f125",
+        track: circuitKey,
+        trackName: TRACK_DISPLAY[circuitKey] ?? circuit,
+        source: "theorycrafted",
+        aero: row[1] ?? "",
+        differential: row[2] ?? "",
+        suspensionGeometry: row[3] ?? "",
+        suspension: row[4] ?? "",
+        brakes: row[5] ?? "",
+        tiresQuali: row[6] ?? "",
+        tiresRace: row[7] ?? "",
+        compounds: row[8] ?? "",
+        strategy: row[9] ?? "",
+        laps: row[10] ?? "",
+        notes: row[12] ?? "",
+        createdBy: row[11] ?? "Theorycrafted",
+      });
+    }
+    return setups;
+  } catch {
+    return [];
   }
-  return setups;
 }
 
 async function fetchGruhnd(): Promise<GameSetup[]> {
-  const res = await fetch(GRUHND_SHEET, {
-    next: { revalidate: CACHE_TTL },
-  });
-  if (!res.ok) return [];
-  const text = await res.text();
-  const rows = parseCSV(text);
-
-  const setups: GameSetup[] = [];
-  // Row 0: disclaimer, Row 1: headers, Row 2+: data
-  for (let i = 2; i < rows.length; i++) {
-    const row = rows[i];
-    const circuit = row[0]?.trim() ?? "";
-    if (!circuit || circuit.toLowerCase().includes("disclaimer") || circuit.toLowerCase() === "unnamed") continue;
-    if (row[1] === "NO" && row[2] === "SETUPS") continue;
-
-    const circuitKey = toCircuitKey(circuit);
-    if (!circuitKey) continue;
-
-    setups.push({
-      game: "f125",
-      track: circuitKey,
-      trackName: TRACK_DISPLAY[circuitKey] ?? circuit,
-      source: "gruhnd",
-      aero: row[1] ?? "",
-      differential: row[2] ?? "",
-      suspensionGeometry: row[3] ?? "",
-      suspension: row[4] ?? "",
-      brakes: row[5] ?? "",
-      tiresQuali: row[6] ?? "",
-      tiresRace: row[7] ?? "",
-      compounds: row[9] ?? "",
-      strategy: row[8] ?? "",
-      createdBy: row[11] ?? "gruhnd",
+  try {
+    const res = await fetch(GRUHND_SHEET, {
+      next: { revalidate: CACHE_TTL },
     });
+    if (!res.ok) return [];
+    const text = await res.text();
+    const rows = parseCSV(text);
+
+    const setups: GameSetup[] = [];
+    // Row 0: disclaimer, Row 1: headers, Row 2+: data
+    for (let i = 2; i < rows.length; i++) {
+      const row = rows[i];
+      const circuit = row[0]?.trim() ?? "";
+      if (!circuit || circuit.toLowerCase().includes("disclaimer") || circuit.toLowerCase() === "unnamed") continue;
+      if (row[1] === "NO" && row[2] === "SETUPS") continue;
+
+      const circuitKey = toCircuitKey(circuit);
+      if (!circuitKey) continue;
+
+      setups.push({
+        game: "f125",
+        track: circuitKey,
+        trackName: TRACK_DISPLAY[circuitKey] ?? circuit,
+        source: "gruhnd",
+        aero: row[1] ?? "",
+        differential: row[2] ?? "",
+        suspensionGeometry: row[3] ?? "",
+        suspension: row[4] ?? "",
+        brakes: row[5] ?? "",
+        tiresQuali: row[6] ?? "",
+        tiresRace: row[7] ?? "",
+        compounds: row[9] ?? "",
+        strategy: row[8] ?? "",
+        createdBy: row[11] ?? "gruhnd",
+      });
+    }
+    return setups;
+  } catch {
+    return [];
   }
-  return setups;
 }
 
 async function fetchTheorycraftedF126(): Promise<GameSetup[]> {
-  const res = await fetch(THEORYCRAFTED_F126_SHEET, {
-    next: { revalidate: CACHE_TTL },
-  });
-  if (!res.ok) return [];
-  const text = await res.text();
-  const rows = parseCSV(text);
-
-  const setups: GameSetup[] = [];
-  // Row 0: headers (empty rows at top are filtered by parseCSV), Row 1+: data
-  // Columns: Track, Aerodynamics, Transmission, Suspension Geometry, Suspension, Brakes, Tyres (PSI), Track Guide Link, Race Strategy 50%, Short Format, Raw Hotlap
-  for (let i = 1; i < rows.length; i++) {
-    const row = rows[i];
-    const circuit = row[0]?.trim() ?? "";
-    if (!circuit || circuit.toLowerCase() === "track") continue;
-
-    const circuitKey = toCircuitKey(circuit);
-    if (!circuitKey) continue;
-
-    setups.push({
-      game: "f126",
-      track: circuitKey,
-      trackName: TRACK_DISPLAY[circuitKey] ?? circuit,
-      source: "theorycrafted",
-      aero: row[1] ?? "",
-      differential: row[2] ?? "",
-      suspensionGeometry: row[3] ?? "",
-      suspension: row[4] ?? "",
-      brakes: row[5] ?? "",
-      tiresQuali: "",
-      tiresRace: row[6] ?? "",
-      compounds: "",
-      strategy: row[8] ?? "",
-      createdBy: "Theorycrafted",
+  try {
+    const res = await fetch(THEORYCRAFTED_F126_SHEET, {
+      cache: "no-store",
     });
+    if (!res.ok) return [];
+    const text = await res.text();
+    const rows = parseCSV(text);
+
+    const setups: GameSetup[] = [];
+    // Empty rows at top are filtered by parseCSV → rows[0] = headers, rows[1+] = data
+    // Columns: Track, Aerodynamics, Transmission, Suspension Geometry, Suspension, Brakes,
+    //          Tyres (PSI), Track Guide Link, Race Strategy 50%, Short Format, Raw Hotlap
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      const circuit = row[0]?.trim() ?? "";
+      if (!circuit || circuit.toLowerCase() === "track") continue;
+      // Skip placeholder rows with no data
+      if (!row[1]?.trim()) continue;
+
+      const circuitKey = toCircuitKey(circuit);
+      if (!circuitKey) continue;
+
+      setups.push({
+        game: "f126",
+        track: circuitKey,
+        trackName: TRACK_DISPLAY[circuitKey] ?? circuit,
+        source: "theorycrafted",
+        aero: row[1] ?? "",
+        differential: row[2] ?? "",
+        suspensionGeometry: row[3] ?? "",
+        suspension: row[4] ?? "",
+        brakes: row[5] ?? "",
+        tiresQuali: "",
+        tiresRace: row[6] ?? "",
+        compounds: "",
+        strategy: row[8] ?? "",
+        createdBy: "Theorycrafted",
+      });
+    }
+    return setups;
+  } catch {
+    return [];
   }
-  return setups;
 }
 
 export async function GET() {
@@ -259,33 +274,25 @@ export async function GET() {
     });
   }
 
-  try {
-    const [theorycraftedF125, gruhnd, theorycraftedF126] = await Promise.all([
-      fetchTheorycraftedF125(),
-      fetchGruhnd(),
-      fetchTheorycraftedF126(),
-    ]);
+  const [theorycraftedF125, gruhnd, theorycraftedF126] = await Promise.all([
+    fetchTheorycraftedF125(),
+    fetchGruhnd(),
+    fetchTheorycraftedF126(),
+  ]);
 
-    const setups = [...theorycraftedF125, ...gruhnd, ...theorycraftedF126];
-    const byTrack: Record<string, GameSetup[]> = {};
-    for (const s of setups) {
-      if (!byTrack[s.track]) byTrack[s.track] = [];
-      byTrack[s.track].push(s);
-    }
-
-    const response: SetupsResponse = { setups, byTrack };
-    await redisSet(CACHE_KEY, response, CACHE_TTL);
-
-    return NextResponse.json(response, {
-      headers: {
-        "Cache-Control": `public, max-age=${CACHE_TTL}, s-maxage=${CACHE_TTL}, stale-while-revalidate=600`,
-      },
-    });
-  } catch (error) {
-    console.error("Setups API error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch setups" },
-      { status: 502 }
-    );
+  const setups = [...theorycraftedF125, ...gruhnd, ...theorycraftedF126];
+  const byTrack: Record<string, GameSetup[]> = {};
+  for (const s of setups) {
+    if (!byTrack[s.track]) byTrack[s.track] = [];
+    byTrack[s.track].push(s);
   }
+
+  const response: SetupsResponse = { setups, byTrack };
+  await redisSet(CACHE_KEY, response, CACHE_TTL);
+
+  return NextResponse.json(response, {
+    headers: {
+      "Cache-Control": `public, max-age=${CACHE_TTL}, s-maxage=${CACHE_TTL}, stale-while-revalidate=600`,
+    },
+  });
 }
