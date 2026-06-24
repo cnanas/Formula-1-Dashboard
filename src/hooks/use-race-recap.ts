@@ -333,7 +333,12 @@ function buildRecapSummary({
 }): RaceRecapSummary {
   const driverMap = new Map(drivers.map((driver) => [driver.driver_number, driver]));
   const gridMap = new Map(startingGrid.map((entry) => [entry.driver_number, entry.position]));
-  const sortedResults = [...results].sort((a, b) => a.position - b.position);
+  const sortedResults = [...results].sort((a, b) => {
+    const aOut = a.dnf || a.dns || a.dsq ? 1 : 0;
+    const bOut = b.dnf || b.dns || b.dsq ? 1 : 0;
+    if (aOut !== bOut) return aOut - bOut;
+    return a.position - b.position;
+  });
 
   const finishers: RecapFinisher[] = sortedResults.map((result) => {
     const gridPosition = gridMap.get(result.driver_number) ?? null;
