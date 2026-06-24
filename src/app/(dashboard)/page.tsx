@@ -6,7 +6,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useSessionStatus } from "@/hooks/use-session-status";
 import { DashboardGrid } from "@/components/dashboard/dashboard-grid";
-import { RaceStartLightsBanner } from "@/components/dashboard/race-start-lights-banner";
 import { F1_APPLE_TV_US_URL } from "@/lib/constants/watch";
 
 export default function DashboardHome() {
@@ -14,9 +13,6 @@ export default function DashboardHome() {
 
   return (
     <div className="space-y-6">
-      {/* Race start lights animation */}
-      <RaceStartLightsBanner />
-
       {/* Live session banner */}
       {isLive && (
         <Card className="border-red-500/50 bg-red-500/5">
