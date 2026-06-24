@@ -296,6 +296,11 @@ function SetupBlock({ setup }: { setup: GameSetup }) {
             💧 Wet
           </span>
         )}
+        {setup.condition === "meta" && (
+          <span className="text-xs font-medium px-2 py-0.5 rounded bg-violet-500/15 text-violet-700 dark:text-violet-400">
+            ★ Meta
+          </span>
+        )}
       </div>
       <div className="grid gap-1.5 text-xs">
         <Row label="Aero" value={setup.aero} />

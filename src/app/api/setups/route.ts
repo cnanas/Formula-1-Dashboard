@@ -10,7 +10,7 @@ const THEORYCRAFTED_F126_SHEET =
   "https://docs.google.com/spreadsheets/d/1mmFai7jDGYpZ2cc_PBk3PBrpUFgbjEzB7z-q5P2VlFE/export?format=csv&gid=673562173";
 const F1LAPS_BASE = "https://www.f1laps.com";
 
-const CACHE_KEY = "setups:v5";
+const CACHE_KEY = "setups:v6";
 const CACHE_TTL = 3600;
 
 // ---------------------------------------------------------------------------
@@ -342,10 +342,73 @@ async function fetchF1LapsTrack(
   }
 }
 
+// ---------------------------------------------------------------------------
+// F1 26 — F1Laps meta setups (aggregate of what fast drivers use)
+// ---------------------------------------------------------------------------
+
+async function fetchF1LapsMetaTrack(slug: string, circuitKey: string): Promise<GameSetup | null> {
+  try {
+    const res = await fetch(`${F1LAPS_BASE}/f1-26/setups/${slug}/meta/`, { cache: "no-store" });
+    if (!res.ok) return null;
+    const html = await res.text();
+
+    const v = parseF1LapsValues(html);
+
+    // Meta uses slightly different label names and includes "psi" suffix on tyre values
+    const strip = (s: string) => s.replace(/psi$/i, "").replace(/°$/, "").trim();
+    const get = (...keys: string[]) => {
+      for (const k of keys) { if (v[k]) return strip(v[k]); }
+      return "";
+    };
+
+    const fw  = get("Front Wing");
+    const rw  = get("Rear Wing");
+    const don = get("Differential On Throttle", "Differential Adjustment On Throttle");
+    const dof = get("Differential Off Throttle", "Differential Adjustment Off Throttle");
+    const eb  = get("Engine Braking");
+    const fc  = get("Front Camber");
+    const rc  = get("Rear Camber");
+    const ft  = get("Front Toe");
+    const rt  = get("Rear Toe");
+    const fs  = get("Front Suspension");
+    const rs  = get("Rear Suspension");
+    const fa  = get("Front Anti-Roll Bar");
+    const ra  = get("Rear Anti-Roll Bar");
+    const frh = get("Front Ride Height");
+    const rrh = get("Rear Ride Height");
+    const bp  = get("Brake Pressure", "Break Pressure");
+    const bb  = get("Front Brake Bias", "Front Break Bias");
+    const tfr = get("Front Right Tyre Pressure");
+    const tfl = get("Front Left Tyre Pressure");
+    const trr = get("Rear Right Tyre Pressure");
+    const trl = get("Rear Left Tyre Pressure");
+
+    return {
+      game: "f126",
+      condition: "meta",
+      track: circuitKey,
+      trackName: TRACK_DISPLAY[circuitKey] ?? slug,
+      source: "f1laps",
+      aero:               [fw, rw].filter(Boolean).join(" / "),
+      differential:       [don, dof, eb ? `EB: ${eb}` : ""].filter(Boolean).join(" / "),
+      suspensionGeometry: [fc, rc, ft, rt].filter(Boolean).join(" / "),
+      suspension:         [fs, rs, fa, ra, frh, rrh].filter(Boolean).join(" / "),
+      brakes:             [bp, bb].filter(Boolean).join(" / "),
+      tiresQuali:         "",
+      tiresRace:          [tfr, tfl, trr, trl].filter(Boolean).join(" / "),
+      compounds:          "",
+      createdBy:          "F1Laps Meta",
+    };
+  } catch {
+    return null;
+  }
+}
+
 async function fetchF1Laps(): Promise<GameSetup[]> {
   const tasks = F1LAPS_TRACKS.flatMap(({ slug, circuitKey }) => [
     fetchF1LapsTrack(slug, circuitKey, "dry"),
     fetchF1LapsTrack(slug, circuitKey, "wet"),
+    fetchF1LapsMetaTrack(slug, circuitKey),
   ]);
   const results = await Promise.all(tasks);
   return results.filter((s): s is GameSetup => s !== null);

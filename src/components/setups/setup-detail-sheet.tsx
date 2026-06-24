@@ -45,6 +45,11 @@ function SetupCard({ setup }: { setup: GameSetup }) {
             💧 Wet
           </Badge>
         )}
+        {setup.condition === "meta" && (
+          <Badge variant="secondary" className="bg-violet-500/15 text-violet-700 dark:text-violet-400">
+            ★ Meta
+          </Badge>
+        )}
       </div>
       <div className="grid gap-2 text-sm">
         <Row label="Aero" value={setup.aero} />

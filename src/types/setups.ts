@@ -1,6 +1,6 @@
 export type SetupSource = "theorycrafted" | "gruhnd" | "f1laps";
 export type SetupGame = "f125" | "f126";
-export type SetupCondition = "dry" | "wet";
+export type SetupCondition = "dry" | "wet" | "meta";
 
 export interface GameSetup {
   game: SetupGame;
