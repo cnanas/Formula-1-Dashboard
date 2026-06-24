@@ -20,7 +20,6 @@ import { useTeamFilter } from "@/providers/team-filter-provider";
 import { useCircuitTheme } from "@/providers/circuit-theme-provider";
 import Image from "next/image";
 import dynamic from "next/dynamic";
-import animationData from "../../../public/animations/race-start-lights.json";
 
 const Lottie = dynamic(() => import("lottie-react"), { ssr: false });
 import { useOpenF1 } from "@/hooks/use-openf1";
@@ -87,6 +86,14 @@ function HeaderCountdown({ targetDate }: { targetDate: Date }) {
 
 export function Topbar() {
   const [mounted, setMounted] = useState(false);
+  const [lightsAnim, setLightsAnim] = useState<object | null>(null);
+
+  useEffect(() => {
+    fetch("/animations/race-start-lights.json")
+      .then((r) => r.json())
+      .then(setLightsAnim)
+      .catch(() => {});
+  }, []);
   const pathname = usePathname();
   const { isLive, latestSession } = useSessionStatus();
   const { dynamicTitle, subtitle } = usePageTitle();
@@ -381,11 +388,13 @@ export function Topbar() {
               </span>
               <span className="text-muted-foreground">·</span>
               <HeaderCountdown targetDate={nextSessionDate} />
-              <Lottie
-                animationData={animationData}
-                loop={true}
-                style={{ width: 180, height: 50, flexShrink: 0 }}
-              />
+              {lightsAnim && (
+                <Lottie
+                  animationData={lightsAnim}
+                  loop={true}
+                  style={{ width: 100, height: 28, flexShrink: 0 }}
+                />
+              )}
             </div>
           )}
         </div>
