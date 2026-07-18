@@ -1,50 +1,89 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Formula 1 Dashboard
 
-## Getting Started
+A customizable F1 companion app: live timing, race analytics, standings, news, a widget-based home dashboard, plus sim-racing telemetry from the F1 game (F1 24/25) via a local UDP relay and an Expo mobile app.
 
-First, run the development server:
+Built with Next.js (App Router), React, TypeScript, Tailwind CSS, and shadcn/ui. Data comes from the [OpenF1 API](https://openf1.org).
+
+## Getting started
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Start the Next.js dev server |
+| `npm run build` / `npm start` | Production build / serve |
+| `npm run lint` | ESLint |
+| `npm test` | Vitest unit tests (`src/**/*.test.ts`) |
+| `npm run relay` | Start the F1 game telemetry relay (see below) |
 
-## Learn More
+## Architecture
 
-To learn more about Next.js, take a look at the following resources:
+### Data flow
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+All OpenF1 data goes through one server-side implementation, `getOpenF1()` in `src/lib/api/openf1-server.ts`:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Server components** (e.g. `/standings`, `/calendar`) call `getOpenF1()` directly and stream HTML with Suspense — no client fetch for the initial render.
+- **Client components** use the `useOpenF1()` SWR hook (`src/hooks/use-openf1.ts`), which hits the proxy route `/api/openf1/[...path]` — a thin wrapper around the same `getOpenF1()`.
 
-## Deploy on Vercel
+Caching is layered:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. **Redis (Upstash)** on the server — shared across users, keyed per endpoint + query. Policy per endpoint lives in `src/lib/api/cache-policy.ts` (the single source of truth; unit-tested).
+2. **HTTP `Cache-Control`** headers on the proxy responses (CDN/browser).
+3. **In-memory + localStorage** on the client (`src/lib/api/cache.ts`) with per-endpoint TTLs from `src/lib/api/endpoints.ts`.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Empty responses are cached for max 30s at every layer so "no data yet" doesn't stick for hours.
 
-## Caching (Upstash Redis)
+### Home dashboard
 
-Server-side caching uses [Upstash Redis](https://upstash.com) so repeated requests (OpenF1 proxy, track history API) are served from cache and OpenF1 is called less often.
+The home page is a drag-and-drop widget grid (`src/components/dashboard/dashboard-grid.tsx`, react-grid-layout). Widgets are registered in `WIDGET_REGISTRY` and **loaded lazily via `next/dynamic`** — only widgets in the user's saved layout are downloaded. Layouts persist to localStorage.
 
-1. Create a Redis database at [console.upstash.com](https://console.upstash.com) (free tier is enough).
-2. Copy the **REST URL** and **REST Token** from the database details.
-3. Add them to your environment:
-   - **Local:** create `.env.local` with `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`.
-   - **Vercel:** Project → Settings → Environment Variables, add the same two variables.
+To add a widget: create it in `src/components/dashboard/widgets/`, then add a `lazyWidget(...)` entry and a registry entry in `dashboard-grid.tsx`.
 
-If these variables are not set, the app runs without Redis; API routes still work and use their normal fetch/Next.js cache behavior.
+### Other API routes
 
-# Formula-1-Dashboard
+- `/api/rss` — F1 news feeds
+- `/api/youtube` — latest channel videos (`YOUTUBE_CHANNEL_ID`)
+- `/api/setups` — F1 25 game car setups
+- `/api/tracks/[circuitKey]` — track history
+- `/api/mapbox/*` — token + static map proxy (`MAPBOX_TOKEN`, optional `MAPBOX_ALLOWED_ORIGINS`)
+
+## Game telemetry (sim racing)
+
+`npm run relay` starts `scripts/telemetry-relay.js`, which listens for F1 game UDP telemetry on port **20777** and rebroadcasts it as WebSocket on port **20978** for the `/game-telemetry` page and the mobile app. At session end it builds a final-classification summary; set `DISCORD_WEBHOOK_URL` to post it to Discord. `run-relay.command` (macOS) / `run-relay.bat` (Windows) are double-click launchers.
+
+## Mobile app (`mobile/`)
+
+An Expo/React Native app (`f1-game-telemetry`) with live game telemetry, lap history, and circuit detail screens. It has its own `package.json`:
+
+```bash
+cd mobile && npm install && npm start
+```
+
+## Environment variables
+
+Create `.env.local` (all optional — the app degrades gracefully):
+
+| Variable | Purpose |
+| --- | --- |
+| `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | Server-side Redis cache ([console.upstash.com](https://console.upstash.com), free tier is enough). Without them, API routes fall back to uncached fetches. `KV_REST_API_URL`/`KV_REST_API_TOKEN` also work (Vercel KV). |
+| `MAPBOX_TOKEN` | Mapbox maps (calendar, track pages) |
+| `MAPBOX_ALLOWED_ORIGINS` | Restrict the token endpoint to specific origins |
+| `YOUTUBE_CHANNEL_ID` | YouTube widget/page |
+| `DISCORD_WEBHOOK_URL` | Telemetry relay session summaries |
+
+On Vercel, set the same variables under Project → Settings → Environment Variables.
+
+## Testing
+
+Unit tests cover the data-shaping layer (cache policy, endpoint/query builders):
+
+```bash
+npm test
+```

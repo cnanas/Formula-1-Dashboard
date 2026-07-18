@@ -27,31 +27,42 @@ import {
   ScrollText,
   type LucideIcon,
 } from "lucide-react";
+import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { WidgetWrapper } from "./widget-wrapper";
-import { StandingsWidget } from "./widgets/standings-widget";
-import { ConstructorStandingsWidget } from "./widgets/constructor-standings-widget";
-import { LiveStatusWidget } from "./widgets/live-status-widget";
-import { NewsWidget } from "./widgets/news-widget";
-import { CalendarWidget } from "./widgets/calendar-widget";
-import { QuickLinksWidget } from "./widgets/quick-links-widget";
-import { CircuitInfoWidget } from "./widgets/circuit-info-widget";
-import { DriverH2HWidget } from "./widgets/driver-h2h-widget";
-import { PointsPerRaceWidget } from "./widgets/points-per-race-widget";
-import { FastestPitstopWidget } from "./widgets/fastest-pitstop-widget";
-import { CrashDamageWidget } from "./widgets/crash-damage-widget";
-import { UsedElementsWidget } from "./widgets/used-elements-widget";
-import { TechUpgradesWidget } from "./widgets/tech-upgrades-widget";
-import { SocialBannerWidget } from "./widgets/social-banner-widget";
-import { NewLiveriesWidget } from "./widgets/new-liveries-widget";
-import { DriverProfileWidget } from "./widgets/driver-profile-widget";
-import { TeamProfileWidget } from "./widgets/team-profile-widget";
-import { GameSetupsWidget } from "./widgets/game-setups-widget";
-import { LatestSessionWidget } from "./widgets/latest-session-widget";
-import { YoutubeWidget } from "./widgets/youtube-widget";
-import { RaceRecapWidget } from "./widgets/race-recap-widget";
 import { useDashboardEdit } from "@/providers/dashboard-edit-provider";
+
+// Widgets are loaded on demand so the home page only ships the ones in the
+// user's active layout. Each widget file stays out of the initial bundle.
+function lazyWidget(loader: () => Promise<React.ComponentType>) {
+  return dynamic(loader, {
+    loading: () => <Skeleton className="h-full w-full" />,
+  });
+}
+
+const StandingsWidget = lazyWidget(() => import("./widgets/standings-widget").then((m) => m.StandingsWidget));
+const ConstructorStandingsWidget = lazyWidget(() => import("./widgets/constructor-standings-widget").then((m) => m.ConstructorStandingsWidget));
+const LiveStatusWidget = lazyWidget(() => import("./widgets/live-status-widget").then((m) => m.LiveStatusWidget));
+const NewsWidget = lazyWidget(() => import("./widgets/news-widget").then((m) => m.NewsWidget));
+const CalendarWidget = lazyWidget(() => import("./widgets/calendar-widget").then((m) => m.CalendarWidget));
+const QuickLinksWidget = lazyWidget(() => import("./widgets/quick-links-widget").then((m) => m.QuickLinksWidget));
+const CircuitInfoWidget = lazyWidget(() => import("./widgets/circuit-info-widget").then((m) => m.CircuitInfoWidget));
+const DriverH2HWidget = lazyWidget(() => import("./widgets/driver-h2h-widget").then((m) => m.DriverH2HWidget));
+const PointsPerRaceWidget = lazyWidget(() => import("./widgets/points-per-race-widget").then((m) => m.PointsPerRaceWidget));
+const FastestPitstopWidget = lazyWidget(() => import("./widgets/fastest-pitstop-widget").then((m) => m.FastestPitstopWidget));
+const CrashDamageWidget = lazyWidget(() => import("./widgets/crash-damage-widget").then((m) => m.CrashDamageWidget));
+const UsedElementsWidget = lazyWidget(() => import("./widgets/used-elements-widget").then((m) => m.UsedElementsWidget));
+const TechUpgradesWidget = lazyWidget(() => import("./widgets/tech-upgrades-widget").then((m) => m.TechUpgradesWidget));
+const SocialBannerWidget = lazyWidget(() => import("./widgets/social-banner-widget").then((m) => m.SocialBannerWidget));
+const NewLiveriesWidget = lazyWidget(() => import("./widgets/new-liveries-widget").then((m) => m.NewLiveriesWidget));
+const DriverProfileWidget = lazyWidget(() => import("./widgets/driver-profile-widget").then((m) => m.DriverProfileWidget));
+const TeamProfileWidget = lazyWidget(() => import("./widgets/team-profile-widget").then((m) => m.TeamProfileWidget));
+const GameSetupsWidget = lazyWidget(() => import("./widgets/game-setups-widget").then((m) => m.GameSetupsWidget));
+const LatestSessionWidget = lazyWidget(() => import("./widgets/latest-session-widget").then((m) => m.LatestSessionWidget));
+const YoutubeWidget = lazyWidget(() => import("./widgets/youtube-widget").then((m) => m.YoutubeWidget));
+const RaceRecapWidget = lazyWidget(() => import("./widgets/race-recap-widget").then((m) => m.RaceRecapWidget));
 
 import "react-grid-layout/css/styles.css";
 
