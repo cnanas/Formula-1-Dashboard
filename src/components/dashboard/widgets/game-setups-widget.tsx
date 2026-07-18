@@ -234,8 +234,11 @@ export function GameSetupsWidget() {
             </div>
           </div>
           <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
-            {displayTrack.setups.map((setup) => (
-              <SetupBlock key={`${setup.source}-${setup.track}`} setup={setup} />
+            {displayTrack.setups.map((setup, i) => (
+              <SetupBlock
+                key={`${setup.game}-${setup.source}-${setup.condition ?? "dry"}-${i}`}
+                setup={setup}
+              />
             ))}
           </div>
           <div className="p-3 border-t border-border shrink-0">

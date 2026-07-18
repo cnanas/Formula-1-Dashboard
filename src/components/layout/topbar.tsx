@@ -19,7 +19,6 @@ import { useSeason } from "@/providers/season-provider";
 import { useTeamFilter } from "@/providers/team-filter-provider";
 import { useCircuitTheme } from "@/providers/circuit-theme-provider";
 import Image from "next/image";
-import { LottiePlayer } from "@/components/ui/lottie-player";
 import { useOpenF1 } from "@/hooks/use-openf1";
 import { getTeamLogoUrl } from "@/lib/constants/team-logos";
 import { F1_APPLE_TV_US_URL } from "@/lib/constants/watch";
@@ -378,10 +377,6 @@ export function Topbar() {
               </span>
               <span className="text-muted-foreground">·</span>
               <HeaderCountdown targetDate={nextSessionDate} />
-              <LottiePlayer
-                src="/animations/race-start-lights.json"
-                style={{ width: 140, height: 40, flexShrink: 0 }}
-              />
             </div>
           )}
         </div>

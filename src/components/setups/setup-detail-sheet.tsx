@@ -254,8 +254,11 @@ export function SetupDetailSheet({
         </SheetHeader>
         <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-6 py-4 overscroll-contain">
           <div className="space-y-4 pb-8">
-            {setups.map((setup) => (
-              <SetupCard key={`${setup.source}-${setup.track}`} setup={setup} />
+            {setups.map((setup, i) => (
+              <SetupCard
+                key={`${setup.game}-${setup.source}-${setup.condition ?? "dry"}-${i}`}
+                setup={setup}
+              />
             ))}
           </div>
         </div>
